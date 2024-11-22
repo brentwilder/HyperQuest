@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import geopandas as gpd
+from spectral import *
 from rasterio.mask import mask
 from skimage.util import view_as_blocks
 from sklearn.linear_model import LinearRegression
@@ -29,7 +30,7 @@ def homogeneous_area(data, geometry_path, geometry_attribute):
     wavelengths = datacube.bands.centers
 
     # start dataframe
-    df = pd.DataFrame(data=wavelengths, column='Wavelength')
+    df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
 
     # Loop through each ROI in the shapefile
     for _, region in roi.iterrows():
@@ -77,11 +78,11 @@ def lmlsd(data, block_size, nbins=150):
     wavelengths = datacube.bands.centers
 
     # start dataframe
-    df = pd.DataFrame(data=wavelengths, column='Wavelength')
+    df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
 
     # convert datacube to numpy array
-    array = None
-
+    array = datacube.open_memmap(writeable=False)
+    print('loaded!')
     # block it 
     array = pad_image(array, block_size)
     blocked_image = view_as_blocks(array, (block_size, block_size, wavelengths))
@@ -124,10 +125,10 @@ def rlsd(data, block_size, nbins=150):
     wavelengths = datacube.bands.centers
 
     # start dataframe
-    df = pd.DataFrame(data=wavelengths, column='Wavelength')
+    df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
 
     # convert datacube to numpy array
-    array = None
+    array = datacube.open_memmap(writeable=False)
 
     # block it 
     array = pad_image(array, block_size)
@@ -183,15 +184,15 @@ def ssdc(data, block_size, nbins=150):
     TODO
     
     '''
-  #Load user data
+    #Load user data
     datacube = load_data(data)
     wavelengths = datacube.bands.centers
 
     # start dataframe
-    df = pd.DataFrame(data=wavelengths, column='Wavelength')
+    df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
 
     # convert datacube to numpy array
-    array = None
+    array = datacube.open_memmap(writeable=False)
 
     # block it 
     array = pad_image(array, block_size)

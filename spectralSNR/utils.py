@@ -42,7 +42,7 @@ def pad_image(image, block_size):
     padded_image = np.pad(image, 
                           ((0, pad_height), (0, pad_width), (0, 0)), 
                           mode='constant', 
-                          constant_values=np.nan)
+                          constant_values=0)
     
     return padded_image
 
