@@ -1,32 +1,28 @@
-from spectral import io 
+from spectral import open_image
 import numpy as np
 
 
-def load_envi(data):
+def load_data(data):
     """
-    Helper function for loading ENVI data in the methods.
+    Helper function for loading hyperspectral data in the methods.
  
     Parameters:
-    data (str or object): Path to an ENVI file or object
+    data (str or object): Path to a file (envi), or path to an object (envi)
     
     Returns:
     datacube (object): The loaded ENVI data cube.
     """
     if isinstance(data, str):
         try:
-            data = io.envi(data)
+            data = open_image(data)
             return data
         except Exception as e:
-            print(f"Error loading ENVI file: {e}")
+            print(f"Error loading file with Spectral package: {e}")
             return None
     elif isinstance(data, object):  
-        if hasattr(data, 'get_data') and hasattr(data, 'get_header'):
-            return data 
-        else:
-            raise ValueError("Provided data is not a valid ENVI format object.")
+        return data 
     else:
-        raise TypeError("Provided data is not a valid file path (string) or a valid ENVI data object.")
-
+        raise TypeError("Provided data is not an object or path.")
 
 
 
