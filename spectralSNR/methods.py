@@ -5,7 +5,7 @@ from rasterio.mask import mask
 from skimage.util import view_as_blocks
 from sklearn.linear_model import LinearRegression
 
-from common import *
+from utils import *
 
 
 def homogeneous_area(data, geometry_path, geometry_attribute):
@@ -100,39 +100,8 @@ def lmlsd(data, block_size, nbins=150):
                 local_sigma_dict[w].append(sigma_local[k])
                 local_mu_dict[w].append(mu_local[k])
 
-    signal = []
-    noise = []
-
-    for w in wavelengths:
-        lsd_values = np.array(local_sigma_dict[w])
-        lmu_values = np.array(local_mu_dict[w])
-        
-        # Create bins based on min max
-        bin_min = np.nanmin(lsd_values)
-        bin_max = np.nanmax(lsd_values)
-        bin_edges = np.linspace(bin_min, bin_max, nbins+1)
-        
-        # Count blocks in bins
-        bin_counts, _ = np.histogram(lsd_values, bins=bin_edges)
-        
-        # Find the bin with the most blocks
-        max_bin_idx = np.argmax(bin_counts)
-        selected_bin_min = bin_edges[max_bin_idx]
-        selected_bin_max = bin_edges[max_bin_idx + 1]
-
-        # Get LSD values in the selected bin
-        selected_sd = lsd_values[(lsd_values >= selected_bin_min) & (lsd_values < selected_bin_max)]
-        selected_mu = lmu_values[(lsd_values >= selected_bin_min) & (lsd_values < selected_bin_max)]
-        
-        # Calculate means
-        noise_value = np.nanmean(selected_sd)
-        noise.append(noise_value)
-        signal_value = np.nanmean(selected_mu)
-        signal.append(signal_value)
-
-    # to array
-    signal = np.array(signal)
-    noise = np.array(noise)
+    # bin 
+    signal, noise = binning(local_mu_dict, local_mu_dict, wavelengths)
 
     # compute ratio
     snr = signal / noise
@@ -145,7 +114,7 @@ def lmlsd(data, block_size, nbins=150):
 
 
 
-def rlsd(data, block_size, nbins):
+def rlsd(data, block_size, nbins=150):
     '''
     TODO
     
@@ -194,54 +163,71 @@ def rlsd(data, block_size, nbins):
                 local_sigma_dict[wavelengths[k]].append(sigma_local)
                 local_mu_dict[wavelengths[k]].append(mu_local)
 
-    # Aggregate results: Compute mean sigma and mu across all blocks for each wavelength
-    signal = []
-    noise = []
+    # bin 
+    signal, noise = binning(local_mu_dict, local_mu_dict, wavelengths)
 
-    for w in wavelengths:
-        lsd_values = np.array(local_sigma_dict[w])
-        lmu_values = np.array(local_mu_dict[w])
-        
-        # Create bins based on min max
-        bin_min = np.nanmin(lsd_values)
-        bin_max = np.nanmax(lsd_values)
-        bin_edges = np.linspace(bin_min, bin_max, nbins+1)
-        
-        # Count blocks in bins
-        bin_counts, _ = np.histogram(lsd_values, bins=bin_edges)
-        
-        # Find the bin with the most blocks
-        max_bin_idx = np.argmax(bin_counts)
-        selected_bin_min = bin_edges[max_bin_idx]
-        selected_bin_max = bin_edges[max_bin_idx + 1]
-
-        # Get LSD values in the selected bin
-        selected_sd = lsd_values[(lsd_values >= selected_bin_min) & (lsd_values < selected_bin_max)]
-        selected_mu = lmu_values[(lsd_values >= selected_bin_min) & (lsd_values < selected_bin_max)]
-        
-        # Calculate means
-        noise_value = np.nanmean(selected_sd)
-        noise.append(noise_value)
-        signal_value = np.nanmean(selected_mu)
-        signal.append(signal_value)
-
-    # Compute SNR
-    signal = np.array(signal)
-    noise = np.array(noise)
+    # compute ratio
     snr = signal / noise
-
     df['SNR'] = snr
+  
 
     return df
 
 
 
-def ssdc(raster, block_size):
+
+
+
+def ssdc(data, block_size, nbins=150):
     '''
     TODO
     
     '''
-    return
+  #Load user data
+    datacube = load_data(data)
+    wavelengths = datacube.bands.centers
+
+    # start dataframe
+    df = pd.DataFrame(data=wavelengths, column='Wavelength')
+
+    # convert datacube to numpy array
+    array = None
+
+    # block it 
+    array = pad_image(array, block_size)
+    blocked_image = view_as_blocks(array, (block_size, block_size, wavelengths))
+    
+    # loop through each block and compute mu local and sigmal local for all wavelengths
+    local_sigma_dict = {w: [] for w in wavelengths}
+    local_mu_dict = {w: [] for w in wavelengths}
+    
+    for i in range(blocked_image.shape[0]):
+        for j in range(blocked_image.shape[1]):
+            ij = blocked_image[i,j,:]
+            #ij = ij.reshape(ij.shape[0], -1) 
+            #ij = ij[:, ~np.isnan(ij).any(axis=0)]
+
+            # TODO:
+            # can't flatten because need to retain neighbor pixel...
+
+            # Skip empty blocks
+            if ij.size == 0:
+                continue
+
+     
+
+                # Store values for this wavelength
+                #local_sigma_dict[wavelengths[k]].append(sigma_local)
+                #local_mu_dict[wavelengths[k]].append(mu_local)
+
+    # bin 
+    signal, noise = binning(local_mu_dict, local_mu_dict, wavelengths)
+
+    # compute ratio
+    snr = signal / noise
+    df['SNR'] = snr
+
+    return df
 
 
 
