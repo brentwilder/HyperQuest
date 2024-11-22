@@ -7,6 +7,4 @@ SpectralSNR is a python package for applying various methods for computing SNR (
 
 The latest release can be installed via pip:
 
-.. code::
-
-    pip install spectralSNR
+`pip install spectralSNR`
