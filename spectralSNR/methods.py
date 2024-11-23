@@ -87,27 +87,28 @@ def lmlsd(data, block_size, nbins=150):
     # block it 
     array = pad_image(array, block_size)
 
-    blocked_image = array.reshape((block_size,
-                                  array.shape[1]// block_size,
-                                  block_size,
-                                  array.shape[2] // block_size,
-                                  array.shape[0])).swapaxes(1, 2)
+    blocked_image = array.reshape((array.shape[0],
+                                   array.shape[1]// block_size, block_size,
+                                   array.shape[2] // block_size,block_size,
+                                  ))
+    print(blocked_image.shape)
 
     # loop through each block and compute mu local and sigmal local for all wavelengths
     local_sigma_dict = {w: [] for w in wavelengths}
     local_mu_dict = {w: [] for w in wavelengths}
-    for i in range(blocked_image.shape[2]):
+    for i in range(blocked_image.shape[1]):
         for j in range(blocked_image.shape[3]):
-            ij = blocked_image[:,:,i,j,:]
-            ij = ij.reshape(-1, ij.shape[2])
+            ij = blocked_image[:,i,:,j,:]
             print(ij.shape)
-            ij = ij[ij[:, 0] != -9999]
+            ij = ij.reshape(-1, ij.shape[0])
+            print(ij.shape)
+            ij = ij[ij[:, -1] >0]
             print(ij.shape)
             if ij.shape[0] != block_size**2: #edge NaN case
                 pass
             else:
                 mu_local = np.nanmean(ij, axis=0)
-                print(mu_local)
+                print(ij)
                 break
                 sigma_local = np.nanstd(ij, axis=0)
                 for k, w in enumerate(wavelengths):

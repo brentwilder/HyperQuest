@@ -16,11 +16,13 @@ def pad_image(image, block_size):
     pad_height = (block_size - (height % block_size)) % block_size
     pad_width = (block_size - (width % block_size)) % block_size
 
-    # Apply padding with np.nan
-    padded_image = np.pad(image, 
-                          ((0, 0),
-                           (0, pad_height), 
-                           (0, pad_width)), 
+    padding = [(0, 0),  
+                (0, pad_height), 
+                (0, pad_width)] 
+
+
+    # Apply padding 
+    padded_image = np.pad(image, padding, 
                           mode='constant', 
                           constant_values=-9999)
 
