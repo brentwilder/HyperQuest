@@ -1,62 +1,64 @@
 import numpy as np
 import pandas as pd
 import geopandas as gpd
-from skimage.util import view_as_blocks
 from sklearn.linear_model import LinearRegression
-import rioxarray as rio
+import rasterio
+import rasterio.mask
+from joblib import Parallel, delayed
 
 from utils import *
 
 
-def homogeneous_area(data, geometry_path, geometry_attribute):
-
+def homogeneous_area(img_path, geometry_path, geometry_attribute):
     """
     Signal-to-Noise Ratio (SNR) for each region of interest using basic homogeneous area.
     This is the simplest method and should be used with extreme caution.
-    
+
     Args:
-    data: Path to the hyperspectral envi data
+    img_path: Path to the hyperspectral image
     geometry_path: Path to the geometry (shp, json, etc).
     geometry_attribute: Attribute that uniquely identifies each region.
-    
+
     Returns:
-    A pandas DataFrame with SNR with respect to wavelengths
+    A pandas DataFrame with SNR with respect to wavelengths.
     """
-    
-    #Load user data
-    src = rio.open_rasterio(data)
-    wavelengths = read_center_wavelength(data)
-    roi = gpd.read_file(geometry_path)
-    roi = roi.to_crs(src.rio.crs) #ensure correct CRS
+    # Load raster and geometry data
+    with rasterio.open(img_path) as src:
+        wavelengths = read_center_wavelength(img_path)
+        roi = gpd.read_file(geometry_path)
+        roi = roi.to_crs(src.crs)
 
-    # start dataframe
-    df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
+        # Start the dataframe
+        df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
 
-    # Loop through each ROI in the shapefile
-    for _, r in roi.iterrows():
-        region_id = r[geometry_attribute]
+        # Loop through each ROI in the shapefile
+        for _, r in roi.iterrows():
+            region_id = r[geometry_attribute]
 
-        # Mask raster with the current region's geometry
-        out = src.rio.clip([r['geometry']]).values
-        flat = out.reshape(out.shape[0], -1).T
+            # Mask raster with the current region's geometry
+            geometry = [r['geometry']]
+            out_image, out_transform = rasterio.mask.mask(src, geometry, crop=True, nodata=-9999)
 
-        # Remove NoData values
-        flat = flat[flat[:, -1] != -9999]
+            # Flatten the masked raster bands
+            flat = out_image.reshape(out_image.shape[0], -1).T
 
-        # Calculate mean (signal) and std (noise) for each band
-        mu = np.nanmean(flat, axis=0)
-        sigma = np.nanstd(flat, axis=0)
-        snr = mu / sigma
+            # Remove NoData values
+            flat = flat[flat[:, -1] != -9999]
 
-        # Add to dataframe
-        df[f'{region_id}_Signal'] = mu
-        df[f'{region_id}_Noise'] = sigma
-        df[f'{region_id}_SNR'] = snr
-    
-    # set index
+            # Calculate mean (signal) and std (noise) for each band
+            mu = np.nanmean(flat, axis=0)
+            sigma = np.nanstd(flat, axis=0)
+
+            # Add to dataframe
+            df[f'{region_id}_Signal'] = mu
+            df[f'{region_id}_Noise'] = sigma
+            df[f'{region_id}_SNR'] = df[f'{region_id}_Signal'] / df[f'{region_id}_Noise']
+
+    # Set index
     df = df.set_index('Wavelength')
 
     return df
+
 
 
 
@@ -70,58 +72,111 @@ def geostatistical(raster, geometry, geometry_attribute):
 
 
 
-def lmlsd(data, block_size, nbins=150):
-    '''
-    TODO
 
-    A region-based block compressive sensing algorithm for plant hypers
-    
-    '''
-    #Load user data
-    array = rio.open_rasterio(data).values
-    wavelengths = read_center_wavelength(data)
 
-    # start dataframe
+def lmlsd(img_path, block_size, nbins=150, ncpus=1):
+    """
+    Compute local mean and standard deviation-based SNR for hyperspectral data.
+
+    Parameters:
+    img_path (str): Path to the hyperspectral image.
+    block_size (int): Size of the square blocks (e.g., 3 for (285, 3, 3)).
+    nbins (int): Number of bins.
+    ncpus (int): Number of parallel processes.
+
+    Returns:
+    pd.DataFrame: DataFrame with wavelength and SNR.
+    """
+    # Load raster and geometry data
+    with rasterio.open(img_path) as src:
+        array = src.read()
+    wavelengths = read_center_wavelength(img_path)
+
+    # Initialize dataframe
     df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
 
-    # block it 
+    # Pad image to ensure divisibility by block_size
     array = pad_image(array, block_size)
 
-    blocked_image = array.reshape((array.shape[0],
-                                   array.shape[1]// block_size, block_size,
-                                   array.shape[2] // block_size,block_size,
-                                  ))
-    print(blocked_image.shape)
-
-    # loop through each block and compute mu local and sigmal local for all wavelengths
-    local_sigma_dict = {w: [] for w in wavelengths}
-    local_mu_dict = {w: [] for w in wavelengths}
-    for i in range(blocked_image.shape[1]):
-        for j in range(blocked_image.shape[3]):
-            ij = blocked_image[:,i,:,j,:]
-            print(ij.shape)
-            ij = ij.reshape(-1, ij.shape[0])
-            print(ij.shape)
-            ij = ij[ij[:, -1] >0]
-            print(ij.shape)
-            if ij.shape[0] != block_size**2: #edge NaN case
-                pass
-            else:
-                mu_local = np.nanmean(ij, axis=0)
-                print(ij)
-                break
-                sigma_local = np.nanstd(ij, axis=0)
-                for k, w in enumerate(wavelengths):
-                    local_sigma_dict[w].append(sigma_local[k])
-                    local_mu_dict[w].append(mu_local[k])
-
-    # bin 
-    signal, noise = binning(local_mu_dict, local_mu_dict, wavelengths, nbins)
-
-    # compute ratio
-    snr = signal / noise
-    df['SNR'] = snr
+    # get tasks (number of blocks)
+    tasks = get_blocks(array, block_size)
     
+    # Parallel processing of blocks using joblib
+    results = Parallel(n_jobs=ncpus)(delayed(stats_of_block)(block) for block in tasks)
+
+    # Create empty lists
+    local_mu = []
+    local_sigma = []
+
+    # Collect results
+    for block_idx, (m, s) in enumerate(results):
+        if m is not None and s is not None:
+            local_mu.append(m)
+            local_sigma.append(s)
+    local_mu = np.array(local_mu)
+    local_sigma = np.array(local_sigma)
+
+    # Bin and compute SNR
+    signal, noise = binning(local_mu, local_sigma, wavelengths, nbins)
+
+    # Add to dataframe
+    df['Signal'] = signal
+    df['Noise'] = noise
+    df['SNR'] = df.Signal / df.Noise
+
+    # Set index
+    df = df.set_index('Wavelength')
+
+    return df
+
+
+
+
+def rlsd(img_path, block_size, nbins=150, ncpus=1):
+    '''
+    TODO
+    
+    '''
+     # Load raster and geometry data
+    with rasterio.open(img_path) as src:
+        array = src.read()
+    wavelengths = read_center_wavelength(img_path)
+
+    # Initialize dataframe
+    df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
+
+    # Pad image to ensure divisibility by block_size
+    array = pad_image(array, block_size)
+
+    # get tasks (number of blocks)
+    tasks = get_blocks(array, block_size)
+    
+    # Parallel processing of blocks using joblib
+    results = Parallel(n_jobs=ncpus)(delayed(spectral_regression_block)(block) for block in tasks)
+
+    # Create empty lists
+    local_mu = []
+    local_sigma = []
+
+    # Collect results
+    for block_idx, (m, s) in enumerate(results):
+        if m is not None and s is not None:
+            local_mu.append(m)
+            local_sigma.append(s)
+    local_mu = np.array(local_mu)
+    local_sigma = np.array(local_sigma)
+
+    # Bin and compute SNR
+    signal, noise = binning(local_mu, local_sigma, wavelengths, nbins)
+
+    # Add to dataframe
+    df['Signal'] = signal
+    df['Noise'] = noise
+    df['SNR'] = df.Signal / df.Noise
+
+    # Set index
+    df = df.set_index('Wavelength')
+
     return df
 
 
@@ -129,64 +184,10 @@ def lmlsd(data, block_size, nbins=150):
 
 
 
-def rlsd(data, block_size, nbins=150):
-    '''
-    TODO
-    
-    '''
-    #Load user data
-    datacube = load_image(data)
-    wavelengths = datacube.bands.centers
 
-    # start dataframe
-    df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
 
-    # convert datacube to numpy array
-    array = datacube.open_memmap(writeable=False)
 
-    # block it 
-    array = pad_image(array, block_size)
-    blocked_image = view_as_blocks(array, (block_size, block_size, wavelengths))
-    
-    # loop through each block and compute mu local and sigmal local for all wavelengths
-    local_sigma_dict = {w: [] for w in wavelengths}
-    local_mu_dict = {w: [] for w in wavelengths}
-    
-    for i in range(blocked_image.shape[0]):
-        for j in range(blocked_image.shape[1]):
-            ij = blocked_image[i,j,:]
-            ij = ij.reshape(ij.shape[0], -1) 
-            ij = ij[:, ~np.isnan(ij).any(axis=0)]
 
-            # Skip empty blocks
-            if ij.size == 0:
-                continue
-
-            # Iterate through wavelengths, skipping first and last
-            for k in range(1, len(wavelengths) - 1):
-                #x* = a + bx(k-1) + cx(k+1)... 
-                X = np.vstack((ij[k - 1], ij[k + 1])).T 
-                y = ij[k]
-                reg = LinearRegression()
-                reg.fit(X, y)
-                y_pred = reg.predict(X)
-                variance = np.var(np.sum((y - y_pred)**2))
-                sigma_local = np.sqrt(variance)
-                mu_local = np.mean(y)
-
-                # Store values for this wavelength
-                local_sigma_dict[wavelengths[k]].append(sigma_local)
-                local_mu_dict[wavelengths[k]].append(mu_local)
-
-    # bin 
-    signal, noise = binning(local_mu_dict, local_mu_dict, wavelengths)
-
-    # compute ratio
-    snr = signal / noise
-    df['SNR'] = snr
-  
-
-    return df
 
 
 
