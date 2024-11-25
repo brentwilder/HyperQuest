@@ -29,14 +29,13 @@ def pad_image(image, block_size):
 
 
 
-def binning(local_mu, local_sigma, wavelengths, nbins):
+def binning(local_mu, local_sigma, nbins):
     """
     TODO
 
     Parameters:
     local_mu (ndarray): xx
     local_sigma (ndarray): xx
-    wavelengths (ndarray): wavelengths corresponding to the data.
     nbins (int): Number of bins for aggregation.
 
     Returns:
@@ -44,11 +43,11 @@ def binning(local_mu, local_sigma, wavelengths, nbins):
     noise (ndarray): Array of noise values with respect to wavelength.
     """
 
-    signal = np.empty_like(wavelengths)
-    noise = np.empty_like(wavelengths)
+    signal = np.empty_like(local_mu[0,:])
+    noise = np.empty_like(local_mu[0,:])
 
     # Process each wavelength
-    for idx, w in enumerate(wavelengths):
+    for idx in range(len(signal)):
         # Get LSD and mean values for this wavelength
         lsd_values = local_sigma[:, idx]
         lmu_values = local_mu[:, idx]
@@ -89,7 +88,7 @@ def binning(local_mu, local_sigma, wavelengths, nbins):
 
 
 
-def stats_of_block(block):
+def block_stats(block):
     """
     Compute local mean and standard deviation for a given block.
 
@@ -115,7 +114,7 @@ def stats_of_block(block):
 
 
 
-def spectral_regression_block(block):
+def block_regression_spectral(block):
     """
     Perform regression for each band in the block. The regression involves
     calculating the relationship between the current band and its neighbors
@@ -189,7 +188,7 @@ def get_blocks(array, block_size):
 
 
 
-def read_center_wavelength(img_path):
+def read_center_wavelengths(img_path):
     '''
     TODO
     '''
@@ -209,3 +208,15 @@ def read_center_wavelength(img_path):
             wavelength = np.array(wavelength)
     
     return wavelength
+
+
+
+def linear_to_db(snr_linear):
+    '''
+    TODO
+    
+    '''
+    snr_db = 10 * np.log10(snr_linear)
+
+    return snr_db
+    

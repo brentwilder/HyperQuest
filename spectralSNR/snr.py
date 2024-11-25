@@ -6,58 +6,50 @@ import rasterio
 import rasterio.mask
 from joblib import Parallel, delayed
 
-from utils import *
+from common import *
 
 
-def homogeneous_area(img_path, geometry_path, geometry_attribute):
+def homogeneous_area(img_path, geometry, output_all=False, snr_in_db = False):
     """
     Signal-to-Noise Ratio (SNR) for each region of interest using basic homogeneous area.
     This is the simplest method and should be used with extreme caution.
 
     Args:
     img_path: Path to the hyperspectral image
-    geometry_path: Path to the geometry (shp, json, etc).
-    geometry_attribute: Attribute that uniquely identifies each region.
+    geometry: geometry from geopandas (e.g., gdf['geometry'])
 
     Returns:
-    A pandas DataFrame with SNR with respect to wavelengths.
+    SNR (or tuple of Signal,Noise,SNR)
     """
     # Load raster and geometry data
     with rasterio.open(img_path) as src:
-        wavelengths = read_center_wavelength(img_path)
-        roi = gpd.read_file(geometry_path)
-        roi = roi.to_crs(src.crs)
 
-        # Start the dataframe
-        df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
+        # clip image
+        out_image, _ = rasterio.mask.mask(src, geometry, crop=True, nodata=-9999)
 
-        # Loop through each ROI in the shapefile
-        for _, r in roi.iterrows():
-            region_id = r[geometry_attribute]
+        # Flatten
+        flat = out_image.reshape(out_image.shape[0], -1).T
 
-            # Mask raster with the current region's geometry
-            geometry = [r['geometry']]
-            out_image, out_transform = rasterio.mask.mask(src, geometry, crop=True, nodata=-9999)
+        # Remove NoData values
+        flat = flat[flat[:, -1] != -9999]
 
-            # Flatten the masked raster bands
-            flat = out_image.reshape(out_image.shape[0], -1).T
+        # Calculate mean (signal) and std (noise) for each band
+        mu = np.nanmean(flat, axis=0)
+        sigma = np.nanstd(flat, axis=0)
 
-            # Remove NoData values
-            flat = flat[flat[:, -1] != -9999]
+        # division (watching out for zero in denominator)
+        out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
+        out[sigma == 0] = np.nan
 
-            # Calculate mean (signal) and std (noise) for each band
-            mu = np.nanmean(flat, axis=0)
-            sigma = np.nanstd(flat, axis=0)
+        # check to convert to db
+        if snr_in_db is True:
+            out = linear_to_db(out)
+        
+        # check to have full output
+        if output_all is True:
+            out = (mu, sigma, out)
 
-            # Add to dataframe
-            df[f'{region_id}_Signal'] = mu
-            df[f'{region_id}_Noise'] = sigma
-            df[f'{region_id}_SNR'] = df[f'{region_id}_Signal'] / df[f'{region_id}_Noise']
-
-    # Set index
-    df = df.set_index('Wavelength')
-
-    return df
+    return out
 
 
 
@@ -74,7 +66,7 @@ def geostatistical(raster, geometry, geometry_attribute):
 
 
 
-def lmlsd(img_path, block_size, nbins=150, ncpus=1):
+def lmlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False):
     """
     Compute local mean and standard deviation-based SNR for hyperspectral data.
 
@@ -90,10 +82,6 @@ def lmlsd(img_path, block_size, nbins=150, ncpus=1):
     # Load raster and geometry data
     with rasterio.open(img_path) as src:
         array = src.read()
-    wavelengths = read_center_wavelength(img_path)
-
-    # Initialize dataframe
-    df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
 
     # Pad image to ensure divisibility by block_size
     array = pad_image(array, block_size)
@@ -102,7 +90,7 @@ def lmlsd(img_path, block_size, nbins=150, ncpus=1):
     tasks = get_blocks(array, block_size)
     
     # Parallel processing of blocks using joblib
-    results = Parallel(n_jobs=ncpus)(delayed(stats_of_block)(block) for block in tasks)
+    results = Parallel(n_jobs=ncpus)(delayed(block_stats)(block) for block in tasks)
 
     # Create empty lists
     local_mu = []
@@ -117,17 +105,21 @@ def lmlsd(img_path, block_size, nbins=150, ncpus=1):
     local_sigma = np.array(local_sigma)
 
     # Bin and compute SNR
-    signal, noise = binning(local_mu, local_sigma, wavelengths, nbins)
+    mu, sigma = binning(local_mu, local_sigma, nbins)
 
-    # Add to dataframe
-    df['Signal'] = signal
-    df['Noise'] = noise
-    df['SNR'] = df.Signal / df.Noise
+    # division (watching out for zero in denominator)
+    out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
+    out[sigma == 0] = np.nan
 
-    # Set index
-    df = df.set_index('Wavelength')
+    # check to convert to db
+    if snr_in_db is True:
+        out = linear_to_db(out)
+    
+    # check to have full output
+    if output_all is True:
+        out = (mu, sigma, out)
 
-    return df
+    return out
 
 
 
@@ -152,7 +144,7 @@ def rlsd(img_path, block_size, nbins=150, ncpus=1):
     tasks = get_blocks(array, block_size)
     
     # Parallel processing of blocks using joblib
-    results = Parallel(n_jobs=ncpus)(delayed(spectral_regression_block)(block) for block in tasks)
+    results = Parallel(n_jobs=ncpus)(delayed(block_regression_spectral)(block) for block in tasks)
 
     # Create empty lists
     local_mu = []
