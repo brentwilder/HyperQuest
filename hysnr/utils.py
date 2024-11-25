@@ -244,7 +244,7 @@ def read_center_wavelengths(img_path):
             wavelength = re.findall(r"[+-]?\d+\.\d+", line)
             wavelength = ','.join(wavelength)
             wavelength = wavelength.split(',')
-            wavelength = np.array(wavelength)
+            wavelength = np.array(wavelength).astype(float)
     
     return wavelength
 
