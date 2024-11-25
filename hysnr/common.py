@@ -43,8 +43,8 @@ def binning(local_mu, local_sigma, nbins):
     noise (ndarray): Array of noise values with respect to wavelength.
     """
 
-    signal = np.empty_like(local_mu[0,:])
-    noise = np.empty_like(local_mu[0,:])
+    signal = np.full_like(local_mu[0,:], np.nan)
+    noise = np.full_like(local_mu[0,:], np.nan)
 
     # Process each wavelength
     for idx in range(len(signal)):
@@ -53,6 +53,9 @@ def binning(local_mu, local_sigma, nbins):
         lmu_values = local_mu[:, idx]
 
         # Create bins based on LSD values
+        if np.all(np.isnan(lsd_values)):
+            continue
+
         bin_min = np.nanmin(lsd_values)
         bin_max = np.nanmax(lsd_values)
         bin_edges = np.linspace(bin_min, bin_max, nbins)
@@ -60,9 +63,9 @@ def binning(local_mu, local_sigma, nbins):
         # Count blocks in each bin
         bin_counts, _ = np.histogram(lsd_values, bins=bin_edges)
         #import matplotlib.pyplot as plt
-        #plt.title(w)
-        #plt.hist(lmu_values, bins=nbins, color='red', alpha=0.7)
-        #plt.hist(lsd_values, bins=nbins, color='k', alpha=0.4)
+        #plt.title(f'Band Number: {idx}')
+        #plt.hist(lmu_values[~np.isnan(lmu_values)], bins=nbins, color='red', alpha=0.7)
+        #plt.hist(lsd_values[~np.isnan(lsd_values)], bins=nbins, color='k', alpha=0.4)
         #plt.show()
 
         # Identify the bin with the highest count
@@ -103,7 +106,7 @@ def block_stats(block):
 
     # Check if the block is entirely NaN
     if np.all(np.isnan(block)):
-        return None, None 
+        return np.full(block.shape[1], np.nan), np.full(block.shape[1], np.nan)
     else:
         mu_local = np.nanmean(block, axis=0)
         sigma_local = np.nanstd(block, axis=0)
@@ -130,27 +133,42 @@ def block_regression_spectral(block):
     block = block.astype(float)
     block[block == -9999] = np.nan
 
-    mu_local = np.empty(block.shape[1]) 
-    sigma_local = np.empty(block.shape[1])  
+    mu_local = np.full(block.shape[1], np.nan) 
+    sigma_local = np.full(block.shape[1], np.nan)  
     
     for k in range(1, block.shape[1] - 1):  # Skip the first and last bands
         X = np.vstack((block[:, k - 1], block[:, k + 1])).T  # Neighboring bands
         y = block[:, k]  # Current band
-        
-        # Check for NaN values in X or y
-        if np.any(np.isnan(X)) or np.any(np.isnan(y)):
-            continue  # Skip regression for this band
-        
-        # Perform linear regression
-        reg = LinearRegression()
-        reg.fit(X, y)
-        y_pred = reg.predict(X)
-        
-        # Calculate residuals and variance
-        variance = np.var(y - y_pred)
-        sigma_local[k] = np.sqrt(variance)
-        mu_local[k] = np.mean(y)
-    
+
+        # If y is valid, proceed
+        if not np.any(np.isnan(y)):
+            # Create a mask for valid (non-NaN) data points in X
+            valid_mask_x = ~np.isnan(X[:, 0]) & ~np.isnan(X[:, 1])  # Check if neither X[k-1] nor X[k+1] is NaN
+
+            # Apply the mask to X and y to remove rows with NaN values
+            X_valid = X[valid_mask_x]
+            y_valid = y[valid_mask_x]
+
+            # Perform regression
+            if len(y_valid) > 3:  # need enough data for regression, 
+                reg = LinearRegression()
+                reg.fit(X_valid, y_valid)
+                y_pred = reg.predict(X_valid)
+
+                # Calculate residuals and variance
+                sigma_local[k] = np.std(y_valid - y_pred)
+                mu_local[k] = np.mean(y_valid)
+
+        #import matplotlib.pyplot as plt
+        #plt.scatter(y, y_pred, alpha=0.6, color='blue', label=f'Band {k}')
+        #plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label='Fit')
+        #plt.xlabel('Observed (y)')
+        #plt.ylabel('Predicted (y_pred)')
+        #plt.title(f'Band {k}, mu:{np.nanmean(y)}, sd:{np.nanstd(y - y_pred)}')
+        #plt.legend()
+        #plt.grid(True)
+        #plt.show()
+
     return mu_local, sigma_local
 
 

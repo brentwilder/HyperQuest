@@ -21,7 +21,7 @@ def homogeneous_area(img_path, geometry, output_all=False, snr_in_db = False):
     Returns:
     SNR (or tuple of Signal,Noise,SNR)
     """
-    # Load raster and geometry data
+    # Load raster
     with rasterio.open(img_path) as src:
 
         # clip image
@@ -79,7 +79,7 @@ def lmlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db 
     Returns:
     pd.DataFrame: DataFrame with wavelength and SNR.
     """
-    # Load raster and geometry data
+    # Load raster
     with rasterio.open(img_path) as src:
         array = src.read()
 
@@ -98,9 +98,8 @@ def lmlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db 
 
     # Collect results
     for block_idx, (m, s) in enumerate(results):
-        if m is not None and s is not None:
-            local_mu.append(m)
-            local_sigma.append(s)
+        local_mu.append(m)
+        local_sigma.append(s)
     local_mu = np.array(local_mu)
     local_sigma = np.array(local_sigma)
 
@@ -124,18 +123,14 @@ def lmlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db 
 
 
 
-def rlsd(img_path, block_size, nbins=150, ncpus=1):
+def rlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False):
     '''
     TODO
     
     '''
-     # Load raster and geometry data
+    # Load raster
     with rasterio.open(img_path) as src:
         array = src.read()
-    wavelengths = read_center_wavelength(img_path)
-
-    # Initialize dataframe
-    df = pd.DataFrame(data=wavelengths, columns=['Wavelength'])
 
     # Pad image to ensure divisibility by block_size
     array = pad_image(array, block_size)
@@ -152,24 +147,27 @@ def rlsd(img_path, block_size, nbins=150, ncpus=1):
 
     # Collect results
     for block_idx, (m, s) in enumerate(results):
-        if m is not None and s is not None:
-            local_mu.append(m)
-            local_sigma.append(s)
+        local_mu.append(m)
+        local_sigma.append(s)
     local_mu = np.array(local_mu)
     local_sigma = np.array(local_sigma)
 
     # Bin and compute SNR
-    signal, noise = binning(local_mu, local_sigma, wavelengths, nbins)
+    mu, sigma = binning(local_mu, local_sigma, nbins)
 
-    # Add to dataframe
-    df['Signal'] = signal
-    df['Noise'] = noise
-    df['SNR'] = df.Signal / df.Noise
+    # division (watching out for zero in denominator)
+    out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
+    out[sigma == 0] = np.nan
 
-    # Set index
-    df = df.set_index('Wavelength')
+    # check to convert to db
+    if snr_in_db is True:
+        out = linear_to_db(out)
+    
+    # check to have full output
+    if output_all is True:
+        out = (mu, sigma, out)
 
-    return df
+    return out
 
 
 
