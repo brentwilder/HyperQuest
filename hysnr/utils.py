@@ -67,9 +67,7 @@ def binning(local_mu, local_sigma, nbins):
 
 def block_regression_spectral(block):
     """
-    Perform regression for each band in the block. The regression involves
-    calculating the relationship between the current band and its neighbors
-    (k-1 and k+1).
+    TODO
 
     Parameters:
     block (ndarray): Block of data.
@@ -77,30 +75,30 @@ def block_regression_spectral(block):
     Returns:
     tuple: Local mean and standard deviation for the block after regression.
     """
- 
+    # Assume no data value TODO
     block = block.astype(float)
-    block[block == -9999] = np.nan
+    block[block <= -999] = np.nan
 
+    # create empty arrays
     mu_local = np.full(block.shape[1], np.nan) 
     sigma_local = np.full(block.shape[1], np.nan)  
 
-    for k in range(1, block.shape[1] - 1):  # Skip the first and last bands
-        X = np.vstack((block[:, k - 1], block[:, k + 1])).T  # Neighboring bands
-        y = block[:, k]  # Current band
+    # loop through all but first and last band
+    for k in range(1, block.shape[1] - 1):
+        X = np.vstack((block[:, k - 1], block[:, k + 1])).T 
+        y = block[:, k] 
 
         # If y is valid, proceed
         if not np.any(np.isnan(y)):
             # Create a mask for valid (non-NaN) data points in X
-            valid_mask_x = ~np.isnan(X[:, 0]) & ~np.isnan(X[:, 1])  # Check if neither X[k-1] nor X[k+1] is NaN
-
-            # Apply the mask to X and y to remove rows with NaN values
+            valid_mask_x = ~np.isnan(X[:, 0]) & ~np.isnan(X[:, 1])
             X_valid = X[valid_mask_x]
             y_valid = y[valid_mask_x]
 
-            # Perform regression
-            if len(y_valid) > 3:  # need enough data for regression, 
+            # regression on enough data
+            if len(y_valid) > 3: 
                 coef, _ = nnls(X_valid, y_valid)
-                y_pred = X_valid @ coef  # Predicted values
+                y_pred = X_valid @ coef
 
                 # Calculate residuals and mean
                 # wxh -3 because of dof, see the following,
@@ -113,7 +111,7 @@ def block_regression_spectral(block):
                 #plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label='Fit')
                 #plt.xlabel('Observed (y)')
                 #plt.ylabel('Predicted (y_pred)')
-                #plt.title(f'Band {k}, mu:{np.nanmean(y_valid)}, sd:{np.nanstd(y_valid - y_pred)}')
+                #plt.title(f'Band {k}')
                 #plt.legend()
                 #plt.grid(True)
                 #plt.show()
@@ -121,6 +119,62 @@ def block_regression_spectral(block):
     return mu_local, sigma_local
 
 
+
+
+
+def block_regression_spectral_spatial(block):
+    """
+    TODO
+
+    Parameters:
+    block (ndarray): Block of data.
+
+    Returns:
+    tuple: Local mean and standard deviation for the block after regression.
+    """
+ 
+    # Assume no data value TODO
+    block = block.astype(float)
+    block[block <= -999] = np.nan
+
+    # create empty arrays
+    mu_local = np.full(block.shape[1], np.nan) 
+    sigma_local = np.full(block.shape[1], np.nan)  
+
+    for k in range(1, block.shape[1] - 1):
+
+        X = np.vstack((block[:, k - 1], block[:, k + 1])).T 
+        neighbor_k = np.roll(block[:, k], shift=1)  # Shift 1
+        X = np.column_stack((X, neighbor_k))
+        y = block[:, k] 
+
+        # If y is valid, proceed
+        if not np.any(np.isnan(y)):
+            # Create a mask for valid (non-NaN) data points in X
+            valid_mask_x = ~np.isnan(X[:, 0]) & ~np.isnan(X[:, 1])
+            X_valid = X[valid_mask_x]
+            y_valid = y[valid_mask_x]
+
+            # regression on enough data
+            if len(y_valid) > 3: 
+                coef, _ = nnls(X_valid, y_valid)
+                y_pred = X_valid @ coef
+
+                # Calculate residuals and mean
+                # wxh -4 
+                sigma_local[k] = np.sqrt(((1/(block.shape[1]-4)) * np.sum((y_valid - y_pred)**2)))
+                mu_local[k] = np.mean(y_valid)
+
+                #import matplotlib.pyplot as plt
+                #plt.scatter(y, y_pred, alpha=0.6, color='blue', label=f'Band {k}')
+                #plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label='Fit')
+                #plt.xlabel('Observed (y)')
+                #plt.ylabel('Predicted (y_pred)')
+                #plt.legend()
+                #plt.grid(True)
+                #plt.show()
+
+    return mu_local, sigma_local
 
 
 

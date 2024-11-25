@@ -1,8 +1,7 @@
 from snr import *
-from hysnr.utils import *
+from utils import *
 
 import matplotlib.pyplot as plt
-import pandas as pd 
 import geopandas as gpd
 
 # TESTING
@@ -17,5 +16,14 @@ wavelengths = read_center_wavelengths(path)
 
 ## RLSD TEST
 signal, noise, snr = rlsd(path, block_size=16, nbins=150, ncpus=ncpus, snr_in_db=False, output_all=True)
-plt.plot(wavelengths, noise, color='red')
+plt.scatter(wavelengths, snr, color='black')
+
+
+snr = hrdsdc(path)
+
+plt.scatter(wavelengths, snr, color='orange')
+
+snr = ssdc(path, block_size=16, nbins=150, ncpus=ncpus)
+plt.scatter(wavelengths, snr, color='magenta')
+
 plt.show()
