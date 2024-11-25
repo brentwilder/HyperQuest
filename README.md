@@ -1,6 +1,6 @@
 # HySNR
 
-HySNR: A Python package for computing Signal-to-Noise Ratios in hyperspectral imaging.
+HySNR: A Python package for computing Signal-to-Noise Ratios (SNR) in hyperspectral imaging (imaging spectroscopy) with an emphasis on repeatability and speed. Computations are sped up and scale with number of cpus.
 
 
 ## Installation Instructions
@@ -19,6 +19,13 @@ pip install hysnr
 - __(RLSD)__ Residual-scaled local standard deviation (Gao et al., 2007)
 
 
+## TODO:
+- water mask
+- helper function to test SLIC
+- segment/block level SNR 
+- visualizing segment level SNR
+- tutorial working with airborne data
+- tutoraial working with that EMIT et al. 2024 paper
 
 
 ## References:
