@@ -12,16 +12,16 @@ pip install hysnr
 ```
 
 ## Methods currently available
-- Homogeneous regions division and spectral de-correlation (HRDSDC) (Gao et al., 2008)
+- __(HRDSDC)__ Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
 
-- Spectral and spatial de-correlation (SSDC) (Roger & Arnold, 1996)
+- __(SSDC)__ Spectral and spatial de-correlation (Roger & Arnold, 1996)
 
-- Residual-scaled local standard deviation (RLSD) (Gao et al., 2007)
-
-
+- __(RLSD)__ Residual-scaled local standard deviation (Gao et al., 2007)
 
 
-#### References:
+
+
+## References:
 
 - Gao, L., Wen, J., & Ran, Q. (2007, November). Residual-scaled local standard deviations method for estimating noise in hyperspectral images. In Mippr 2007: Multispectral Image Processing (Vol. 6787, pp. 290-298). SPIE.
 
