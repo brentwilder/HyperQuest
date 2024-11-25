@@ -1,32 +1,7 @@
 import numpy as np
-from sklearn.linear_model import LinearRegression
+from scipy.optimize import nnls
 import re
 import os
-
-
-
-def pad_image(image, block_size):
-    """
-    Pads the image to ensure the dimensions are divisible by block_size, using np.nan for padding.
-    """
-    bands, height, width = image.shape
-    
-    # Calculate padding for height and width
-    pad_height = (block_size - (height % block_size)) % block_size
-    pad_width = (block_size - (width % block_size)) % block_size
-
-    padding = [(0, 0),  
-                (0, pad_height), 
-                (0, pad_width)] 
-
-
-    # Apply padding 
-    padded_image = np.pad(image, padding, 
-                          mode='constant', 
-                          constant_values=-9999)
-
-    return padded_image
-
 
 
 def binning(local_mu, local_sigma, nbins):
@@ -90,33 +65,6 @@ def binning(local_mu, local_sigma, nbins):
 
 
 
-
-def block_stats(block):
-    """
-    Compute local mean and standard deviation for a given block.
-
-    Parameters:
-    block (ndarray): Block of data to process.
-
-    Returns:
-    tuple: Local mean and standard deviation for the block.
-    """
-    block = block.astype(float)
-    block[block == -9999] = np.nan
-
-    # Check if the block is entirely NaN
-    if np.all(np.isnan(block)):
-        return np.full(block.shape[1], np.nan), np.full(block.shape[1], np.nan)
-    else:
-        mu_local = np.nanmean(block, axis=0)
-        sigma_local = np.nanstd(block, axis=0)
-
-
-    return mu_local, sigma_local
-
-
-
-
 def block_regression_spectral(block):
     """
     Perform regression for each band in the block. The regression involves
@@ -135,7 +83,7 @@ def block_regression_spectral(block):
 
     mu_local = np.full(block.shape[1], np.nan) 
     sigma_local = np.full(block.shape[1], np.nan)  
-    
+
     for k in range(1, block.shape[1] - 1):  # Skip the first and last bands
         X = np.vstack((block[:, k - 1], block[:, k + 1])).T  # Neighboring bands
         y = block[:, k]  # Current band
@@ -151,23 +99,24 @@ def block_regression_spectral(block):
 
             # Perform regression
             if len(y_valid) > 3:  # need enough data for regression, 
-                reg = LinearRegression()
-                reg.fit(X_valid, y_valid)
-                y_pred = reg.predict(X_valid)
+                coef, _ = nnls(X_valid, y_valid)
+                y_pred = X_valid @ coef  # Predicted values
 
-                # Calculate residuals and variance
-                sigma_local[k] = np.std(y_valid - y_pred)
+                # Calculate residuals and mean
+                # wxh -3 because of dof, see the following,
+                # "Residual-scaled local standard deviations method for estimating noise in hyperspectral images"
+                sigma_local[k] = np.sqrt(((1/(block.shape[1]- 3)) * np.sum((y_valid - y_pred)**2)))
                 mu_local[k] = np.mean(y_valid)
 
-        #import matplotlib.pyplot as plt
-        #plt.scatter(y, y_pred, alpha=0.6, color='blue', label=f'Band {k}')
-        #plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label='Fit')
-        #plt.xlabel('Observed (y)')
-        #plt.ylabel('Predicted (y_pred)')
-        #plt.title(f'Band {k}, mu:{np.nanmean(y)}, sd:{np.nanstd(y - y_pred)}')
-        #plt.legend()
-        #plt.grid(True)
-        #plt.show()
+                #import matplotlib.pyplot as plt
+                #plt.scatter(y, y_pred, alpha=0.6, color='blue', label=f'Band {k}')
+                #plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label='Fit')
+                #plt.xlabel('Observed (y)')
+                #plt.ylabel('Predicted (y_pred)')
+                #plt.title(f'Band {k}, mu:{np.nanmean(y_valid)}, sd:{np.nanstd(y_valid - y_pred)}')
+                #plt.legend()
+                #plt.grid(True)
+                #plt.show()
 
     return mu_local, sigma_local
 
@@ -175,13 +124,27 @@ def block_regression_spectral(block):
 
 
 
+def pad_image(image, block_size):
+    """
+    Pads the image to ensure the dimensions are divisible by block_size, using np.nan for padding.
+    """
+    bands, height, width = image.shape
+    
+    # Calculate padding for height and width
+    pad_height = (block_size - (height % block_size)) % block_size
+    pad_width = (block_size - (width % block_size)) % block_size
+
+    padding = [(0, 0),  
+                (0, pad_height), 
+                (0, pad_width)] 
 
 
+    # Apply padding 
+    padded_image = np.pad(image, padding, 
+                          mode='constant', 
+                          constant_values=-9999)
 
-
-
-
-
+    return padded_image
 
 
 def get_blocks(array, block_size):
@@ -226,6 +189,7 @@ def read_center_wavelengths(img_path):
             wavelength = np.array(wavelength)
     
     return wavelength
+
 
 
 
