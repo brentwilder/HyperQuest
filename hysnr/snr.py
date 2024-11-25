@@ -13,7 +13,6 @@ def rlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     '''
     TODO
 
-    SNR (or tuple of Signal,Noise,SNR)
     
     '''
     # Load raster
@@ -114,19 +113,7 @@ def hrdsdc(img_path,n_segments=200,
            compactness=0.1, n_pca = 3, ncpus=1, 
            output_all=False, snr_in_db=False):
     """
-    Perform hyperspectral quality assessment using clustering and NNLS-based regression within each segment.
-    
-    Parameters:
-        img_path (str): Path to the hyperspectral image.
-        segmentation_method (str): Clustering/segmentation method to use ('slic' supported for now).
-        n_segments (int): Number of segments for SLIC.
-        compactness (float): Compactness parameter for SLIC.
-        ncpus (int): Number of CPUs to use for parallel processing.
-        output_all (bool): Whether to output all intermediate results.
-        snr_in_db (bool): Whether to output SNR in dB scale.
-    
-    Returns:
-        ndarray: SNR computed for each spectral band.
+    TODO
     """
     # Load raster
     with rasterio.open(img_path) as src:
