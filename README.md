@@ -7,7 +7,9 @@ HySNR: A Python package for computing Signal-to-Noise Ratios in hyperspectral im
 
 The latest release can be installed via pip:
 
-`pip install spectralSNR`
+```bash
+pip install spectralSNR
+```
 
 
 
