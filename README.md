@@ -11,10 +11,20 @@ The latest release can be installed via pip:
 pip install hysnr
 ```
 
+## Methods currently available
+- Homogeneous regions division and spectral de-correlation (HRDSDC) (Gao et al., 2008)
+
+- Spectral and spatial de-correlation (SSDC) (Roger & Arnold, 1996)
+
+- Residual-scaled local standard deviation (RLSD) (Gao et al., 2007)
 
 
-TODO:
-- The PRISMA imaging spectroscopy mission: overview and first performance analysis
-- Expanded Signal to Noise Ratio Estimates for Validating Next-Generation Satellite Sensors in Oceanic, Coastal, and Inland Waters
-- A Comparative Study on Linear Regression-Based Noise Estimation for Hyperspectral Imagery
-- A region-based block compressive sensing algorithm for plant hyperspectral images
+
+
+#### References:
+
+- Gao, L., Wen, J., & Ran, Q. (2007, November). Residual-scaled local standard deviations method for estimating noise in hyperspectral images. In Mippr 2007: Multispectral Image Processing (Vol. 6787, pp. 290-298). SPIE.
+
+- Gao, L. R., Zhang, B., Zhang, X., Zhang, W. J., & Tong, Q. X. (2008). A new operational method for estimating noise in hyperspectral images. IEEE Geoscience and remote sensing letters, 5(1), 83-87.
+
+- Roger, R. E., & Arnold, J. F. (1996). Reliably estimating the noise in AVIRIS hyperspectral images. International Journal of Remote Sensing, 17(10), 1951-1962.
