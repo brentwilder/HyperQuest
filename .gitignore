@@ -1,3 +1,4 @@
 tests/data
 *__pycache__*
 spectralSNR/test.py
+*egg*

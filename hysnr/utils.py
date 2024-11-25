@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import nnls
 import re
+from pathlib import Path
 import os
 
 
@@ -228,11 +229,14 @@ def read_center_wavelengths(img_path):
     TODO
     '''
 
-    # Remove any existing extension (e.g., .img, .bsq) 
-    base_name, _ = os.path.splitext(img_path)
+    # Convert img_path to a Path object
+    img_path = Path(img_path).resolve()
     
+    # Remove any existing extension (e.g., .img, .bsq)
+    base_name = img_path.stem  
+
     # Add .hdr extension
-    hdr_path = base_name + '.hdr'
+    hdr_path = img_path.with_name(base_name + '.hdr')
 
     wavelength = None
     for line in open(hdr_path, 'r'):

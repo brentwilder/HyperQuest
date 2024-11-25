@@ -5,7 +5,7 @@ from joblib import Parallel, delayed
 from skimage.segmentation import slic
 from sklearn.decomposition import PCA
 
-from utils import *
+from .utils import *
 
 
 
