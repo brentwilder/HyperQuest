@@ -2,3 +2,4 @@ tests/data
 *__pycache__*
 hysnr/test.py
 *egg*
+dist/
