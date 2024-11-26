@@ -2,6 +2,10 @@
 
 hyperquest: A Python package for estimating image-wide noise across wavelengths in hyperspectral imaging (imaging spectroscopy) with an emphasis on repeatability and speed. Computations are sped up and scale with number of cpus.
 
+Plenty of methods for denoising imagery already exist, however, sometimes there are applications where knowing/comparing SNR from image conditions is of interest. It is also important to point out this is __not__ instrument noise, which is measured in laboratory. These methods here provide an estimate of "actual noise in real conditions" (Curran & Dungan, 1989; Cogliati et al., 2021).
+
+It's my hope `hyperquest` may be a useful tool and/or learning resource for discussing. Comments and suggestions are welcome! 
+
 
 ## Installation Instructions
 
@@ -18,6 +22,7 @@ pip install hyperquest
 
 - __(RLSD)__ Residual-scaled local standard deviation (Gao et al., 2007)
 
+
 ## Usage example
 ```python
 import hyperquest
@@ -29,7 +34,7 @@ wavelengths = hyperquest.read_center_wavelengths(envi_img_path)
 # compute using HRDSDC method
 snr = hyperquest.hrdsdc(envi_img_path, n_segments=1000, 
                         compactness=0.1, n_pca=3, ncpus=3)
-                        
+
 plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 ```
 ![SNR Plot](tests/plots/demo_snr.png)
@@ -47,6 +52,10 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 
 
 ## References:
+
+- Cogliati, S., Sarti, F., Chiarantini, L., Cosi, M., Lorusso, R., Lopinto, E., ... & Colombo, R. (2021). The PRISMA imaging spectroscopy mission: overview and first performance analysis. Remote sensing of environment, 262, 112499.
+
+- Curran, P. J., & Dungan, J. L. (1989). Estimation of signal-to-noise: a new procedure applied to AVIRIS data. IEEE Transactions on Geoscience and Remote sensing, 27(5), 620-628.
 
 - Gao, L., Wen, J., & Ran, Q. (2007, November). Residual-scaled local standard deviations method for estimating noise in hyperspectral images. In Mippr 2007: Multispectral Image Processing (Vol. 6787, pp. 290-298). SPIE.
 
