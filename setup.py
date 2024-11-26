@@ -5,14 +5,14 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="hySNR", 
+    name="hyperquest", 
     version="0.1.0", 
     author="Brent Wilder", 
     author_email="brentwilder@u.boisestate.edu",
     description="A package for calculating image-wide SNR and noise from hyperspectral images.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/brentwilder/hySNR", 
+    url="https://github.com/brentwilder/hyperquest", 
     packages=find_packages(), 
     install_requires=[  # Ensure all dependencies are listed
         "numpy>=1.20.0", 

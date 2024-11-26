@@ -1,6 +1,6 @@
-# HySNR
+# HyperQuest
 
-HySNR: A Python package for computing Signal-to-Noise Ratios (SNR) in hyperspectral imaging (imaging spectroscopy) with an emphasis on repeatability and speed. Computations are sped up and scale with number of cpus.
+hyperquest: A Python package for estimating image-wide noise across wavelengths in hyperspectral imaging (imaging spectroscopy) with an emphasis on repeatability and speed. Computations are sped up and scale with number of cpus.
 
 
 ## Installation Instructions
@@ -8,7 +8,7 @@ HySNR: A Python package for computing Signal-to-Noise Ratios (SNR) in hyperspect
 The latest release can be installed via pip:
 
 ```bash
-pip install hysnr
+pip install hyperquest
 ```
 
 ## Methods currently available
