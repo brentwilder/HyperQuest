@@ -9,9 +9,13 @@ from .utils import *
 
 
 
-def rlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False):
+def rlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, 
+         snr_in_db = False, mask_waterbodies=True):
     '''
     TODO
+
+    ndwi bands start from 1 .. can also use helper function
+
 
     
     '''
@@ -19,6 +23,10 @@ def rlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     with rasterio.open(img_path) as src:
         array = src.read()
 
+    # mask waterbodies
+    if mask_waterbodies is True:
+        array = mask_water_using_ndwi(array, img_path)
+    
     # Pad image to ensure divisibility by block_size
     array = pad_image(array, block_size)
 
@@ -61,7 +69,8 @@ def rlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
 
 
-def ssdc(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False):
+def ssdc(img_path, block_size, nbins=150, ncpus=1, output_all=False, 
+         snr_in_db = False, mask_waterbodies=True):
     '''
     TODO
     
@@ -69,6 +78,10 @@ def ssdc(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     # Load raster
     with rasterio.open(img_path) as src:
         array = src.read()
+
+    # mask waterbodies
+    if mask_waterbodies is True:
+        array = mask_water_using_ndwi(array, img_path)
 
     # Pad image to ensure divisibility by block_size
     array = pad_image(array, block_size)
@@ -111,13 +124,17 @@ def ssdc(img_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
 def hrdsdc(img_path,n_segments=200, 
            compactness=0.1, n_pca = 3, ncpus=1, 
-           output_all=False, snr_in_db=False):
+           output_all=False, snr_in_db=False, mask_waterbodies=True):
     """
     TODO
     """
     # Load raster
     with rasterio.open(img_path) as src:
         array = src.read() 
+
+    # mask waterbodies
+    if mask_waterbodies is True:
+        array = mask_water_using_ndwi(array, img_path)
 
     # Rearrange to (rows, cols, bands) for segmentation
     array = np.moveaxis(array, 0, -1)

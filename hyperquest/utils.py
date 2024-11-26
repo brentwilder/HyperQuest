@@ -2,21 +2,12 @@ import numpy as np
 from scipy.optimize import nnls
 import re
 from pathlib import Path
-import os
 
 
 def binning(local_mu, local_sigma, nbins):
     """
     TODO
 
-    Parameters:
-    local_mu (ndarray): xx
-    local_sigma (ndarray): xx
-    nbins (int): Number of bins for aggregation.
-
-    Returns:
-    signal (ndarray): Array of signal values with respect to wavelength
-    noise (ndarray): Array of noise values with respect to wavelength.
     """
 
     signal = np.full_like(local_mu[0,:], np.nan)
@@ -70,11 +61,6 @@ def block_regression_spectral(block):
     """
     TODO
 
-    Parameters:
-    block (ndarray): Block of data.
-
-    Returns:
-    tuple: Local mean and standard deviation for the block after regression.
     """
     # Assume no data value TODO
     block = block.astype(float)
@@ -127,11 +113,6 @@ def block_regression_spectral_spatial(block):
     """
     TODO
 
-    Parameters:
-    block (ndarray): Block of data.
-
-    Returns:
-    tuple: Local mean and standard deviation for the block after regression.
     """
  
     # Assume no data value TODO
@@ -181,7 +162,7 @@ def block_regression_spectral_spatial(block):
 
 def pad_image(image, block_size):
     """
-    Pads the image to ensure the dimensions are divisible by block_size, using np.nan for padding.
+    TODO
     """
     bands, height, width = image.shape
     
@@ -203,6 +184,9 @@ def pad_image(image, block_size):
 
 
 def get_blocks(array, block_size):
+    '''
+    TODO
+    '''
 
     # Reshape into blocks
     blocked_image = array.reshape(
@@ -260,3 +244,18 @@ def linear_to_db(snr_linear):
 
     return snr_db
     
+
+def mask_water_using_ndwi(array, img_path):
+    '''
+    TODO
+    '''
+    wavelengths = read_center_wavelengths(img_path)
+    green_index = np.argmin(np.abs(wavelengths - 559))
+    nir_index = np.argmin(np.abs(wavelengths - 864))
+    green = array[green_index, :, :] 
+    nir = array[nir_index, :, :] 
+    ndwi = (green - nir) / (green + nir)
+
+    array[:, ndwi > 0] = -9999
+
+    return array

@@ -43,12 +43,11 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 
 
 ## TODO:
-- water mask
-- helper function to test SLIC
-- segment/block level SNR 
-- visualizing segment level SNR
-- tutorial working with airborne data
-- tutoraial working with that EMIT et al. 2024 paper
+
+- include more methods
+- including other segmentation methods
+- perhaps allowing removing edges like in Cogliati et al. (2021)
+- tutorial working with that EMIT et al. 2024 paper
 
 
 ## References:
@@ -62,3 +61,5 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 - Gao, L. R., Zhang, B., Zhang, X., Zhang, W. J., & Tong, Q. X. (2008). A new operational method for estimating noise in hyperspectral images. IEEE Geoscience and remote sensing letters, 5(1), 83-87.
 
 - Roger, R. E., & Arnold, J. F. (1996). Reliably estimating the noise in AVIRIS hyperspectral images. International Journal of Remote Sensing, 17(10), 1951-1962.
+
+- Tian, W., Zhao, Q., Kan, Z., Long, X., Liu, H., & Cheng, J. (2022). A new method for estimating signal-to-noise ratio in UAV hyperspectral images based on pure pixel extraction. IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, 16, 399-408.
