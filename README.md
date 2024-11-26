@@ -1,5 +1,11 @@
 # HyperQuest
 
+[![Build Status](https://github.com/brentwilder/hyperquest/actions/workflows/pytest.yml/badge.svg)](https://github.com/brentwilder/hyperquest/actions/workflows/pytest.yml)
+![PyPI](https://img.shields.io/pypi/v/hyperquest)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/hyperquest)
+[![Downloads](https://pepy.tech/badge/hyperquest)](https://pepy.tech/project/hyperquest)
+
+
 `hyperquest`: A Python package for estimating image-wide noise across wavelengths in hyperspectral imaging (imaging spectroscopy) with an emphasis on repeatability and speed. Computations are sped up and scale with number of cpus.
 
 Plenty of methods for denoising imagery already exist, however, sometimes there are applications where knowing/comparing SNR from image conditions is of interest. It is also important to point out this is __not__ instrument noise, which is measured in laboratory. These methods here provide an estimate of "actual noise in real conditions" (Curran & Dungan, 1989; Cogliati et al., 2021).
