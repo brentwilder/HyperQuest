@@ -45,7 +45,7 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 ## TODO:
 
 - include more methods
-- including other segmentation methods
+- including other segmentation methods. Currently is all built around SLIC (via scikitlearn).
 - perhaps allowing removing edges like in Cogliati et al. (2021)
 - tutorial working with that EMIT et al. 2024 paper
 
