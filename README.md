@@ -4,7 +4,7 @@
 
 Plenty of methods for denoising imagery already exist, however, sometimes there are applications where knowing/comparing SNR from image conditions is of interest. It is also important to point out this is __not__ instrument noise, which is measured in laboratory. These methods here provide an estimate of "actual noise in real conditions" (Curran & Dungan, 1989; Cogliati et al., 2021).
 
-It's my hope `hyperquest` may be a useful tool and/or learning resource for discussing. Comments and suggestions are welcome! 
+It's my hope `hyperquest` may be a useful tool and/or learning resource for computing SNR from imaging spectroscopy data. Comments and suggestions are welcome! 
 
 
 ## Installation Instructions
