@@ -6,7 +6,7 @@ path = './tests/data/ca-test'
 ncpus = 3  
 block_size = 16
 nbins = 150
-n_segments = 200
+n_segments = 1000
 compactness = 0.1
 n_pca = 3
 
