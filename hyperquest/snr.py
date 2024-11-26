@@ -166,7 +166,8 @@ def hrdsdc(img_path,n_segments=200,
                 if len(y_valid) > 3:
                     coef, _ = nnls(X_valid, y_valid)
                     y_pred = X_valid @ coef
-                    sigma_segment[k] = np.nanstd(y_valid - y_pred)
+                    # 3 DOF because of MLR
+                    sigma_segment[k] = np.nanstd(y_valid - y_pred, ddof=3)
                     mu_segment[k] = np.nanmean(y_valid)
 
         return mu_segment, sigma_segment

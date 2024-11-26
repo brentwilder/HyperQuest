@@ -104,7 +104,7 @@ def block_regression_spectral(block):
                 # Calculate residuals and mean
                 # wxh -3 because of dof, see the following,
                 # "Residual-scaled local standard deviations method for estimating noise in hyperspectral images"
-                sigma_local[k] = np.sqrt(((1/(block.shape[1]- 3)) * np.sum((y_valid - y_pred)**2)))
+                sigma_local[k] = np.nanstd(y_valid - y_pred, ddof=3)
                 mu_local[k] = np.mean(y_valid)
 
                 #import matplotlib.pyplot as plt
@@ -163,7 +163,7 @@ def block_regression_spectral_spatial(block):
 
                 # Calculate residuals and mean
                 # wxh -4 
-                sigma_local[k] = np.sqrt(((1/(block.shape[1]-4)) * np.sum((y_valid - y_pred)**2)))
+                sigma_local[k] = np.nanstd(y_valid - y_pred, ddof=4)
                 mu_local[k] = np.mean(y_valid)
 
                 #import matplotlib.pyplot as plt
