@@ -19,20 +19,21 @@ pip install hyperquest
 - __(RLSD)__ Residual-scaled local standard deviation (Gao et al., 2007)
 
 ## Usage example
-```{python}
+```python
 import hyperquest
+import matplotlib.pyplot as plt
 
 # get wavelengths
 wavelengths = hyperquest.read_center_wavelengths(envi_img_path)
 
-# compute HRDSDC
+# compute using HRDSDC method
 snr = hyperquest.hrdsdc(envi_img_path, n_segments=1000, 
                         compactness=0.1, n_pca=3, ncpus=3)
-
-plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 plt.show()
-
 ```
+![SNR Plot](tests/plots/demo_snr.png)
+
+
 
 
 ## TODO:
