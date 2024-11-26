@@ -38,7 +38,7 @@ import matplotlib.pyplot as plt
 wavelengths = hyperquest.read_center_wavelengths(envi_img_path)
 
 # compute using HRDSDC method
-snr = hyperquest.hrdsdc(envi_img_path, n_segments=1000, 
+snr = hyperquest.hrdsdc(envi_img_path, n_segments=10000, 
                         compactness=0.1, n_pca=3, ncpus=3)
 
 plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
