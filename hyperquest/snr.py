@@ -163,7 +163,7 @@ def hrdsdc(img_path,n_segments=200,
                 X_valid = X[valid_mask_x]
                 y_valid = y[valid_mask_x]
 
-                if len(y_valid) > 3:
+                if len(y_valid) > 50: # from Gao, at least 50
                     coef, _ = nnls(X_valid, y_valid)
                     y_pred = X_valid @ coef
                     # 3 DOF because of MLR
