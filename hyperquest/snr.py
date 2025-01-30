@@ -8,15 +8,22 @@ from sklearn.decomposition import PCA
 from .utils import *
 
 
-def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, 
-         snr_in_db = False, mask_waterbodies=True):
+def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True):
     '''
-    TODO
+    Residual-scaled local standard deviation (Gao et al., 2007)
 
-    ndwi bands start from 1 .. can also use helper function
+    Parameters:
+        hdr_path (str): Path to the .hdr file.
+        block_size (int): Block size for partitioning (for example 5 would be 5x5 pixels).
+        nbins (int, optional): Number of bins for histogram analysis. Default is 150.
+        ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
+        output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
+        snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
 
+    Returns:
+        out: either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
 
-    
     '''
 
     # Find img path.
@@ -68,11 +75,22 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False,
     return out
 
 
-def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, 
-         snr_in_db = False, mask_waterbodies=True):
+def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True):
     '''
-    TODO
-    
+    Spectral and spatial de-correlation (Roger & Arnold, 1996)
+
+    Parameters:
+        hdr_path (str): Path to the .hdr file.
+        block_size (int): Block size for partitioning (for example 5 would be 5x5 pixels).
+        nbins (int, optional): Number of bins for histogram analysis. Default is 150.
+        ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
+        output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
+        snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+
+    Returns:
+        out: either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
+
     '''
 
     # Find img path.
@@ -124,12 +142,25 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False,
     return out
 
 
-def hrdsdc(hdr_path,n_segments=200, 
-           compactness=0.1, n_pca = 3, ncpus=1, 
+def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, 
            output_all=False, snr_in_db=False, mask_waterbodies=True):
-    """
-    TODO
-    """
+    '''
+    Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
+
+    Parameters:
+        hdr_path (str): Path to the .hdr file.
+        n_segments (int):  The (approximate) number of labels in the segmented output image. see skimage.segmentation.slic for more.
+        compactness (float):Balances color proximity and space proximity. Higher values give more weight to space proximity, making superpixel shapes more square/cubic.see skimage.segmentation.slic for more.
+        n_pca (int): Number of PCAs to compute and provide to SLIC segmentation.
+        ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
+        output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
+        snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+
+    Returns:
+        out: either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
+
+    '''
 
     # Find img path.
     img_path = get_img_path_from_hdr(hdr_path)
@@ -155,16 +186,6 @@ def hrdsdc(hdr_path,n_segments=200,
     segments = slic(array_pca, 
                     n_segments=n_segments, 
                     compactness=compactness)
-
-
-    # Plot the clusters overlaid on the image
-    #import matplotlib.pyplot as plt
-    #from skimage.segmentation import mark_boundaries
-    #plt.figure(figsize=(10, 10))
-    #plt.imshow(mark_boundaries(array_pca[:,:,0:3], segments, color=(0,0,0)))
-    #plt.title("SLIC Clusters")
-    #plt.axis("off")
-    #plt.show()
 
     # Process each segment
     unique_segments = np.unique(segments)

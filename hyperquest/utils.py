@@ -5,10 +5,13 @@ from os.path import abspath, exists
 
 
 def binning(local_mu, local_sigma, nbins):
-    """
+    '''
+
     TODO
 
-    """
+    computes signal and noise using histogram/binning method
+
+    '''
 
     signal = np.full_like(local_mu[0,:], np.nan)
     noise = np.full_like(local_mu[0,:], np.nan)
@@ -29,11 +32,6 @@ def binning(local_mu, local_sigma, nbins):
 
         # Count blocks in each bin
         bin_counts, _ = np.histogram(lsd_values, bins=bin_edges)
-        #import matplotlib.pyplot as plt
-        #plt.title(f'Band Number: {idx}')
-        #plt.hist(lmu_values[~np.isnan(lmu_values)], bins=nbins, color='red', alpha=0.7)
-        #plt.hist(lsd_values[~np.isnan(lsd_values)], bins=nbins, color='k', alpha=0.4)
-        #plt.show()
 
         # Identify the bin with the highest count
         max_bin_idx = np.argmax(bin_counts)
@@ -58,10 +56,11 @@ def binning(local_mu, local_sigma, nbins):
 
 
 def block_regression_spectral(block):
-    """
-    TODO
+    '''
+    TODO:
+    for each NxN block, perform regression on k+1, k-1 spectral data
 
-    """
+    '''
     # Assume no data value TODO
     block = block.astype(float)
     block[block <= -999] = np.nan
@@ -93,16 +92,6 @@ def block_regression_spectral(block):
                 sigma_local[k] = np.nanstd(y_valid - y_pred, ddof=3)
                 mu_local[k] = np.mean(y_valid)
 
-                #import matplotlib.pyplot as plt
-                #plt.scatter(y, y_pred, alpha=0.6, color='blue', label=f'Band {k}')
-                #plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label='Fit')
-                #plt.xlabel('Observed (y)')
-                #plt.ylabel('Predicted (y_pred)')
-                #plt.title(f'Band {k}')
-                #plt.legend()
-                #plt.grid(True)
-                #plt.show()
-
     return mu_local, sigma_local
 
 
@@ -110,10 +99,11 @@ def block_regression_spectral(block):
 
 
 def block_regression_spectral_spatial(block):
-    """
-    TODO
+    '''
+    TODO:
+    for each NxN block, perform regression on k+1 (same pixel), k-1 (same pixel), and k from nearby pixel. 
 
-    """
+    '''
  
     # Assume no data value TODO
     block = block.astype(float)
@@ -126,7 +116,7 @@ def block_regression_spectral_spatial(block):
     for k in range(1, block.shape[1] - 1):
 
         X = np.vstack((block[:, k - 1], block[:, k + 1])).T 
-        neighbor_k = np.roll(block[:, k], shift=1)  # Shift 1
+        neighbor_k = np.roll(block[:, k], shift=1)  # Shift 1 to find a neighbor pixel
         X = np.column_stack((X, neighbor_k))
         y = block[:, k] 
 
@@ -147,23 +137,16 @@ def block_regression_spectral_spatial(block):
                 sigma_local[k] = np.nanstd(y_valid - y_pred, ddof=4)
                 mu_local[k] = np.mean(y_valid)
 
-                #import matplotlib.pyplot as plt
-                #plt.scatter(y, y_pred, alpha=0.6, color='blue', label=f'Band {k}')
-                #plt.plot([y.min(), y.max()], [y.min(), y.max()], 'r--', label='Fit')
-                #plt.xlabel('Observed (y)')
-                #plt.ylabel('Predicted (y_pred)')
-                #plt.legend()
-                #plt.grid(True)
-                #plt.show()
-
     return mu_local, sigma_local
 
 
 
 def pad_image(image, block_size):
-    """
-    TODO
-    """
+    '''
+    TODO:
+    pads image for NxN blocking to be allowed.
+
+    '''
     bands, height, width = image.shape
     
     # Calculate padding for height and width
@@ -185,7 +168,9 @@ def pad_image(image, block_size):
 
 def get_blocks(array, block_size):
     '''
-    TODO
+    TODO:
+    provides the full array of blocks based on NxN size.
+
     '''
 
     # Reshape into blocks
@@ -205,23 +190,22 @@ def get_blocks(array, block_size):
     return blocks
 
 
-
-
-
-def read_center_wavelengths(img_path):
+def read_center_wavelengths(hdr_path):
     '''
-    TODO
+    TODO:
+    Reads center wavelengths from the hdr file
+
     '''
     
     # get absolute path 
-    img_path = abspath(img_path)
+    hdr_path = abspath(hdr_path)
 
     # Raise exception if does not end in .hdr
-    if not img_path.lower().endswith('.hdr'):
-        raise ValueError(f'Invalid file format: {img_path}. Expected an .hdr file.')
+    if not hdr_path.lower().endswith('.hdr'):
+        raise ValueError(f'Invalid file format: {hdr_path}. Expected an .hdr file.')
 
     wavelength = None
-    for line in open(img_path, 'r'):
+    for line in open(hdr_path, 'r'):
         if 'wavelength =' in line or 'wavelength=' in line: 
             wavelength = re.findall(r"[+-]?\d+\.\d+", line)
             wavelength = ','.join(wavelength)
@@ -236,7 +220,9 @@ def read_center_wavelengths(img_path):
 
 def get_img_path_from_hdr(hdr_path):
     '''
-    TODO
+    TODO:
+    quickly gets actual image path from relative position of .hdr file
+
     '''
     
     # Ensure the file ends in .hdr
@@ -245,6 +231,9 @@ def get_img_path_from_hdr(hdr_path):
 
     # If there, get the base path without .hdr
     base_path = hdr_path[:-4]  # Remove last 4 characters (".hdr")
+
+    # get absolute path 
+    base_path = abspath(base_path)
 
     # Possible raster file extensions to check
     raster_extensions = ['.raw', '.img', '.dat', '.bsq', ''] 
@@ -267,9 +256,11 @@ def get_img_path_from_hdr(hdr_path):
 
 def linear_to_db(snr_linear):
     '''
-    TODO
-    
+    TODO:
+    Convert the SNR to units of dB.
+
     '''
+
     snr_db = 10 * np.log10(snr_linear)
 
     return snr_db
@@ -277,8 +268,15 @@ def linear_to_db(snr_linear):
 
 def mask_water_using_ndwi(array, img_path, ndwi_threshold=0):
     '''
-    TODO 
+    TODO:
+    Returns array where NDWI greater than a threshold are set to -9999 (masked out).
+
+    Reason behind this is that water typically has very very low signal, and therefore different SNR compared to the image.
+
+    It may be a common thing to need to remove water here so this method is called in al of the SNR functions. 
+
     '''
+
     wavelengths = read_center_wavelengths(img_path)
     green_index = np.argmin(np.abs(wavelengths - 559))
     nir_index = np.argmin(np.abs(wavelengths - 864))
