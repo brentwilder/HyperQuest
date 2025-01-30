@@ -207,9 +207,9 @@ def hrdsdc(img_path,n_segments=200,
     out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
     out[sigma == 0] = np.nan
 
-    # Convert to dB if requested
-    if snr_in_db:
-        out = 10 * np.log10(out)
+    # check to convert to db
+    if snr_in_db is True:
+        out = linear_to_db(out)
 
     # Output full results if requested
     if output_all:
