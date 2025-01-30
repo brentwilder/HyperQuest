@@ -3,3 +3,4 @@ tests/data
 hysnr/test.py
 *egg*
 dist/
+hyperquest/temp.py

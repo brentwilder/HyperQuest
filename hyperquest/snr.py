@@ -8,8 +8,7 @@ from sklearn.decomposition import PCA
 from .utils import *
 
 
-
-def rlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False, 
+def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, 
          snr_in_db = False, mask_waterbodies=True):
     '''
     TODO
@@ -19,6 +18,10 @@ def rlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False,
 
     
     '''
+
+    # Find img path.
+    img_path = get_img_path_from_hdr(hdr_path)
+
     # Load raster
     with rasterio.open(img_path) as src:
         array = src.read()
@@ -65,16 +68,16 @@ def rlsd(img_path, block_size, nbins=150, ncpus=1, output_all=False,
     return out
 
 
-
-
-
-
-def ssdc(img_path, block_size, nbins=150, ncpus=1, output_all=False, 
+def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, 
          snr_in_db = False, mask_waterbodies=True):
     '''
     TODO
     
     '''
+
+    # Find img path.
+    img_path = get_img_path_from_hdr(hdr_path)
+
     # Load raster
     with rasterio.open(img_path) as src:
         array = src.read()
@@ -121,13 +124,16 @@ def ssdc(img_path, block_size, nbins=150, ncpus=1, output_all=False,
     return out
 
 
-
-def hrdsdc(img_path,n_segments=200, 
+def hrdsdc(hdr_path,n_segments=200, 
            compactness=0.1, n_pca = 3, ncpus=1, 
            output_all=False, snr_in_db=False, mask_waterbodies=True):
     """
     TODO
     """
+
+    # Find img path.
+    img_path = get_img_path_from_hdr(hdr_path)
+
     # Load raster
     with rasterio.open(img_path) as src:
         array = src.read() 

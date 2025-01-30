@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.optimize import nnls
 import re
-from pathlib import Path
+from os.path import abspath, exists
 
 
 def binning(local_mu, local_sigma, nbins):
@@ -212,18 +212,16 @@ def read_center_wavelengths(img_path):
     '''
     TODO
     '''
-
-    # Convert img_path to a Path object
-    img_path = Path(img_path).resolve()
     
-    # Remove any existing extension (e.g., .img, .bsq)
-    base_name = img_path.stem  
+    # get absolute path 
+    img_path = abspath(img_path)
 
-    # Add .hdr extension
-    hdr_path = img_path.with_name(base_name + '.hdr')
+    # Raise exception if does not end in .hdr
+    if not img_path.lower().endswith('.hdr'):
+        raise ValueError(f'Invalid file format: {img_path}. Expected an .hdr file.')
 
     wavelength = None
-    for line in open(hdr_path, 'r'):
+    for line in open(img_path, 'r'):
         if 'wavelength =' in line or 'wavelength=' in line: 
             wavelength = re.findall(r"[+-]?\d+\.\d+", line)
             wavelength = ','.join(wavelength)
@@ -232,6 +230,38 @@ def read_center_wavelengths(img_path):
     
     return wavelength
 
+
+
+
+
+def get_img_path_from_hdr(hdr_path):
+    '''
+    TODO
+    '''
+    
+    # Ensure the file ends in .hdr
+    if not hdr_path.lower().endswith('.hdr'):
+        raise ValueError(f'Invalid file format: {hdr_path}. Expected a .hdr file.')
+
+    # If there, get the base path without .hdr
+    base_path = hdr_path[:-4]  # Remove last 4 characters (".hdr")
+
+    # Possible raster file extensions to check
+    raster_extensions = ['.raw', '.img', '.dat', '.bsq', ''] 
+
+    # Find which raster file exists
+    img_path = None
+    for ext in raster_extensions:
+        possible_path = base_path + ext
+        if exists(possible_path):
+            img_path = possible_path
+            break
+
+    # if still None, image file was not found.
+    if img_path is None:
+        raise FileNotFoundError(f"No corresponding image file found for {hdr_path}")
+    
+    return img_path
 
 
 
@@ -245,9 +275,9 @@ def linear_to_db(snr_linear):
     return snr_db
     
 
-def mask_water_using_ndwi(array, img_path):
+def mask_water_using_ndwi(array, img_path, ndwi_threshold=0):
     '''
-    TODO
+    TODO 
     '''
     wavelengths = read_center_wavelengths(img_path)
     green_index = np.argmin(np.abs(wavelengths - 559))
@@ -256,6 +286,6 @@ def mask_water_using_ndwi(array, img_path):
     nir = array[nir_index, :, :] 
     ndwi = (green - nir) / (green + nir)
 
-    array[:, ndwi > 0] = -9999
+    array[:, ndwi > ndwi_threshold] = -9999
 
     return array
