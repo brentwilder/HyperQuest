@@ -6,15 +6,15 @@ with open("README.md", "r") as fh:
 
 setup(
     name="hyperquest", 
-    version="0.1.0", 
+    version="0.1.1", 
     author="Brent Wilder", 
     author_email="brentwilder@u.boisestate.edu",
-    description="A package for calculating image-wide SNR and noise from hyperspectral images.",
+    description=" A Python package for Hyperspectral Quality Estimation and computing image-wide noise in hyperspectral imaging (imaging spectroscopy)",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/brentwilder/hyperquest", 
     packages=find_packages(), 
-    install_requires=[  # Ensure all dependencies are listed
+    install_requires=[
         "numpy>=1.20.0", 
         "pandas>=1.2.0",
         "geopandas>=0.9.0",
@@ -29,7 +29,7 @@ setup(
         "License :: OSI Approved :: MIT License",  
         "Operating System :: OS Independent",
         "Development Status :: 3 - Alpha",
-        "Topic :: Scientific/Engineering :: Image Recognition",
+        "Topic :: Scientific/Engineering",
     ],
     python_requires=">=3.7", 
 )
