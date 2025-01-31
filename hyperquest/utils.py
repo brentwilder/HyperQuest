@@ -236,7 +236,7 @@ def get_img_path_from_hdr(hdr_path):
     base_path = abspath(base_path)
 
     # Possible raster file extensions to check
-    raster_extensions = ['.raw', '.img', '.dat', '.bsq', ''] 
+    raster_extensions = ['.raw', '.img', '.dat', '.bsq', '.bin', ''] 
 
     # Find which raster file exists
     img_path = None
@@ -266,7 +266,7 @@ def linear_to_db(snr_linear):
     return snr_db
     
 
-def mask_water_using_ndwi(array, img_path, ndwi_threshold=0):
+def mask_water_using_ndwi(array, img_path, ndwi_threshold=0.25):
     '''
     TODO:
     Returns array where NDWI greater than a threshold are set to -9999 (masked out).
@@ -287,3 +287,15 @@ def mask_water_using_ndwi(array, img_path, ndwi_threshold=0):
     array[:, ndwi > ndwi_threshold] = -9999
 
     return array
+
+
+def mask_atmos_windows(value, wavelengths):
+    '''
+    TODO
+    '''
+    
+    mask = ((wavelengths >= 1250) & (wavelengths <= 1450)) | ((wavelengths >= 1780) & (wavelengths <= 1950))
+
+    value[mask] = np.nan
+    
+    return value

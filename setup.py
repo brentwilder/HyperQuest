@@ -14,7 +14,7 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/brentwilder/hyperquest", 
     packages=find_packages(), 
-    install_requires=[  # Ensure all dependencies are listed
+    install_requires=[
         "numpy>=1.20.0", 
         "pandas>=1.2.0",
         "geopandas>=0.9.0",

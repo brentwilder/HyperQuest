@@ -54,14 +54,13 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 
 ## TODO:
 
-- include more methods
 - brainstorm: other quality metrics outside of SNR in this package?
 
+- including other segmentation methods? Currently is all built around SLIC (via scikitlearn).
 
-- including other segmentation methods. Currently is all built around SLIC (via scikitlearn).
+- provide Cogliati et al. (2021) method: extract edges and also include neighbor pixel.
 
-- perhaps allowing removing edges like in Cogliati et al. (2021)
-- tutorial working with that EMIT et al. 2024 paper
+- tutorial working with a PRISMA image.
 
 
 

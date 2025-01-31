@@ -35,7 +35,7 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, img_path)
+        array = mask_water_using_ndwi(array, hdr_path)
     
     # Pad image to ensure divisibility by block_size
     array = pad_image(array, block_size)
@@ -59,6 +59,11 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     # Bin and compute SNR
     mu, sigma = binning(local_mu, local_sigma, nbins)
+
+    # remove atmos windows
+    w = read_center_wavelengths(hdr_path)
+    mu = mask_atmos_windows(mu, w)
+    sigma = mask_atmos_windows(sigma, w)
 
     # division (watching out for zero in denominator)
     out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
@@ -102,7 +107,7 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, img_path)
+        array = mask_water_using_ndwi(array, hdr_path)
 
     # Pad image to ensure divisibility by block_size
     array = pad_image(array, block_size)
@@ -126,6 +131,11 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     # Bin and compute SNR
     mu, sigma = binning(local_mu, local_sigma, nbins)
+
+    # remove atmos windows
+    w = read_center_wavelengths(hdr_path)
+    mu = mask_atmos_windows(mu, w)
+    sigma = mask_atmos_windows(sigma, w)
 
     # division (watching out for zero in denominator)
     out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
@@ -171,7 +181,7 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, img_path)
+        array = mask_water_using_ndwi(array, hdr_path)
 
     # Rearrange to (rows, cols, bands) for segmentation
     array = np.moveaxis(array, 0, -1)
@@ -181,43 +191,55 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
     rows, cols, bands = array.shape
     array_reshaped = array.reshape(-1, bands)
     array_pca = pca.fit_transform(array_reshaped).reshape(rows, cols, -1)
-    
+
     # SLIC
     segments = slic(array_pca, 
                     n_segments=n_segments, 
                     compactness=compactness)
 
-    # Process each segment
+    # find unique SLIC segments
     unique_segments = np.unique(segments)
-    
-    # function here to access array in multiprocessing
-    def process_segment(segment_id):
-        mask = (segments == segment_id)
-        segment_data = array[mask]  
-        
-        mu_segment = np.full(segment_data.shape[1], np.nan)
-        sigma_segment = np.full(segment_data.shape[1], np.nan)
-        
-        for k in range(1, segment_data.shape[1] - 1):
-            X = np.vstack((segment_data[:, k - 1], segment_data[:, k + 1])).T
-            y = segment_data[:, k]
-            
-            if not np.any(np.isnan(y)):
-                valid_mask_x = ~np.isnan(X[:, 0]) & ~np.isnan(X[:, 1])
-                X_valid = X[valid_mask_x]
-                y_valid = y[valid_mask_x]
 
-                if len(y_valid) > 50: # from Gao, at least 50
-                    coef, _ = nnls(X_valid, y_valid)
-                    y_pred = X_valid @ coef
-                    # 3 DOF because of MLR
-                    sigma_segment[k] = np.nanstd(y_valid - y_pred, ddof=3)
-                    mu_segment[k] = np.nanmean(y_valid)
+    # Remove any SLIC segments that are in NaN regions prior to multiprocessing
+    segment_data = []
+    for u in unique_segments:
+        test_mask = (segments == u)
+        test_segment = array[test_mask]
+        # remove data that is NaN (keep only positive values)
+        test_segment = test_segment[test_segment[:,0] > -99]
+        if test_segment.shape[0] != 0:
+            segment_data.append(test_segment)
+
+    # function here to access array in multiprocessing
+    def process_segment(segment_worker):
+
+        # remove data that is NaN (keep only positive values)
+        segment_worker = segment_worker[segment_worker[:,0] > -99]
+
+        # Make a blank set of mu and sigma for filling in (value for each wavelength)
+        mu_segment = np.full(segment_worker.shape[1], np.nan)
+        sigma_segment = np.full(segment_worker.shape[1], np.nan)
+        
+        # for k in range of wavelengths (except first and last)
+        for k in range(1, segment_worker.shape[1] - 1):
+
+            # create the X and y for MLR
+            X = np.vstack((segment_worker[:, k - 1], segment_worker[:, k + 1])).T
+            y = segment_worker[:, k]
+
+            if len(y) > 50: # from Gao, at least 50
+                coef, _ = nnls(X, y)
+                y_pred = X @ coef
+
+                # 3 DOF because of MLR
+                sigma_segment[k] = np.nanstd(y - y_pred, ddof=3)
+                mu_segment[k] = np.nanmean(y)
 
         return mu_segment, sigma_segment
 
     # Parallel processing of all segments
-    results = Parallel(n_jobs=ncpus)(delayed(process_segment)(seg_id) for seg_id in unique_segments)
+    results = Parallel(n_jobs=ncpus, 
+                       timeout=None)(delayed(process_segment)(segment) for segment in segment_data)
 
     # Aggregate results
     local_mu = np.array([res[0] for res in results])
@@ -229,6 +251,11 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
     sigma_valid = np.nanmean(local_sigma[:, 1:-1], axis=0)
     mu = np.concatenate(([np.nan], mu_valid, [np.nan]))
     sigma = np.concatenate(([np.nan], sigma_valid, [np.nan]))
+
+    # remove atmos windows
+    w = read_center_wavelengths(hdr_path)
+    mu = mask_atmos_windows(mu, w)
+    sigma = mask_atmos_windows(sigma, w)
 
     # Compute SNR
     out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
