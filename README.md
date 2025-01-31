@@ -30,6 +30,9 @@ pip install hyperquest
 
 
 ## Usage example
+
+- see [Example Using EMIT](tutorials/example_using_EMIT.ipynb) for a recent use case.
+
 ```python
 import hyperquest
 import matplotlib.pyplot as plt

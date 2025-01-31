@@ -4,3 +4,4 @@ hysnr/test.py
 *egg*
 dist/
 .DS_STORE
+build/
