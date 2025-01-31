@@ -60,9 +60,6 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 
 - provide Cogliati et al. (2021) method: extract edges and also include neighbor pixel.
 
-- tutorial working with a PRISMA image.
-
-
 
 
 ## References:
