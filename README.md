@@ -63,13 +63,28 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 
 - provide Cogliati et al. (2021) method: extract edges and also include neighbor pixel.
 
-prep JOSS submission
+- prep JOSS submission
+
+- assess/profile longest parts of code. 
+
+- Worth C-code for linear regressions?
 
 
-assess/profile longest parts of code. 
 
+## Citing HyperQuest
 
-Worth C-code for linear regressions?
+If you use HyperQuest in your research, please use the following BibTeX entry.
+
+```bibtex
+@article{wilder202x,
+  title={x},
+  author={Brenton A. Wilder},
+  journal={x},
+  url={x},
+  year={x}
+}
+```
+
 
 ## References:
 
