@@ -6,11 +6,7 @@
 [![Downloads](https://pepy.tech/badge/hyperquest)](https://pepy.tech/project/hyperquest)
 
 
-`hyperquest`: A Python package for estimating image-wide noise across wavelengths in hyperspectral imaging (imaging spectroscopy) with an emphasis on repeatability and speed. Computations are sped up and scale with number of cpus.
-
-Plenty of methods for denoising imagery already exist, however, sometimes there are applications where knowing/comparing SNR from image conditions is of interest. It is also important to point out this is __not__ instrument noise, which is measured in laboratory. These methods here provide an estimate of "actual noise in real conditions" (Curran & Dungan, 1989; Cogliati et al., 2021).
-
-It's my hope `hyperquest` may be a useful tool and/or learning resource for computing SNR from imaging spectroscopy data. Comments and suggestions are welcome! 
+`hyperquest`: A Python package for estimating image-wide quality estimation metrics of hyperspectral imaging (imaging spectroscopy). Computations are sped up and scale with number of cpus.
 
 
 ## Installation Instructions
@@ -20,13 +16,6 @@ The latest release can be installed via pip:
 ```bash
 pip install hyperquest
 ```
-
-## Methods currently available
-- __(HRDSDC)__ Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
-
-- __(SSDC)__ Spectral and spatial de-correlation (Roger & Arnold, 1996)
-
-- __(RLSD)__ Residual-scaled local standard deviation (Gao et al., 2007)
 
 
 ## Usage example
@@ -44,7 +33,7 @@ envi_hdr_path = '/path/my_spectral_image.hdr'
 # get wavelengths
 wavelengths = hyperquest.read_center_wavelengths(envi_hdr_path)
 
-# compute using HRDSDC method
+# compute SNR using HRDSDC method
 snr = hyperquest.hrdsdc(envi_hdr_path, n_segments=10000, 
                         compactness=0.1, n_pca=3, ncpus=3)
 
