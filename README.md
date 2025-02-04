@@ -43,27 +43,7 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 
 
 
-
-## TODO:
-
-- brainstorm: other quality metrics outside of SNR in this package?
-  - Spectral calibration assessment, MODTRAN is taxing...which presents a limitation
-  - co-reg accuracy using AROSICS
-  - spatial resolution
-  - See EMIT 2024 paper for more.
-
-- prep JOSS submission
-
-- assess/profile longest parts of code. 
-
-- explore numba and other methods to speed up NNLS / MLR.
-
-- for future, consider other segmentation methods
-
-
-
-
-## Citing HyperQuest
+## Citing HyperQuest (STILL WORKING ON THIS TODO:)
 
 If you use HyperQuest in your research, please use the following BibTeX entry.
 
