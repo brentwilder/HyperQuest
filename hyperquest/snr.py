@@ -6,6 +6,7 @@ from skimage.segmentation import slic
 from sklearn.decomposition import PCA
 
 from .utils import *
+from .mlr import *
 
 
 def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True):
@@ -44,7 +45,7 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     tasks = get_blocks(array, block_size)
     
     # Parallel processing of blocks using joblib
-    results = Parallel(n_jobs=ncpus)(delayed(block_regression_spectral)(block) for block in tasks)
+    results = Parallel(n_jobs=ncpus)(delayed(mlr_spectral)(block) for block in tasks)
 
     # Create empty lists
     local_mu = []
@@ -116,7 +117,7 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     tasks = get_blocks(array, block_size)
     
     # Parallel processing of blocks using joblib
-    results = Parallel(n_jobs=ncpus)(delayed(block_regression_spectral_spatial)(block) for block in tasks)
+    results = Parallel(n_jobs=ncpus)(delayed(mlr_spectral_spatial)(block) for block in tasks)
 
     # Create empty lists
     local_mu = []
@@ -152,8 +153,9 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     return out
 
 
-def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, 
-           output_all=False, snr_in_db=False, mask_waterbodies=True):
+def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
+           include_neighbor_pixel_in_mlr=True, output_all=False, 
+           snr_in_db=False, mask_waterbodies=True):
     '''
     Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
 
@@ -163,6 +165,7 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
         compactness (float):Balances color proximity and space proximity. Higher values give more weight to space proximity, making superpixel shapes more square/cubic.see skimage.segmentation.slic for more.
         n_pca (int): Number of PCAs to compute and provide to SLIC segmentation.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
+        include_neighbor_pixel_in_mlr (bool, optional): If True, neighbor pixel is used in MLR (for k`). Else, MLR only contains spectral data (k+1, k-1).
         output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
         snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
         mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
@@ -210,9 +213,15 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
         if test_segment.shape[0] != 0:
             segment_data.append(test_segment)
 
-    # Parallel processing of all segments
-    results = Parallel(n_jobs=ncpus, 
-                       timeout=None)(delayed(process_segment)(segment) for segment in segment_data)
+    # Parallel processing of all segments depending on method selected
+    if include_neighbor_pixel_in_mlr == False:
+        # Perform just spectral MLR
+        results = Parallel(n_jobs=ncpus, 
+                           timeout=None)(delayed(mlr_spectral)(segment) for segment in segment_data)
+        
+    else: # perform spectral-spatial MLR using k` nearby neighbor.
+        results = Parallel(n_jobs=ncpus, 
+                           timeout=None)(delayed(mlr_spectral_spatial)(segment) for segment in segment_data) 
 
     # Aggregate results
     local_mu = np.array([res[0] for res in results])

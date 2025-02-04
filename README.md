@@ -63,8 +63,6 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
   - spatial resolution
   - See EMIT 2024 paper for more.
 
-- provide Cogliati et al. (2021) method:includes neighbor pixel , and select center 3x3 pixels.
-
 - prep JOSS submission
 
 - assess/profile longest parts of code. 

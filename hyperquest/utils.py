@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.optimize import nnls
 import re
 from os.path import abspath, exists
 
@@ -50,136 +49,6 @@ def binning(local_mu, local_sigma, nbins):
         signal[idx] = np.nanmean(selected_mu)
 
     return signal.astype(float), noise.astype(float)
-
-
-
-
-
-def block_regression_spectral(block):
-    '''
-    TODO:
-    for each NxN block, perform regression on k+1, k-1 spectral data
-
-    '''
-    # Assume no data value TODO
-    block = block.astype(float)
-    block[block <= -999] = np.nan
-
-    # create empty arrays
-    mu_local = np.full(block.shape[1], np.nan) 
-    sigma_local = np.full(block.shape[1], np.nan)  
-
-    # loop through all but first and last band
-    for k in range(1, block.shape[1] - 1):
-        X = np.vstack((block[:, k - 1], block[:, k + 1])).T 
-        y = block[:, k] 
-
-        # If y is valid, proceed
-        if not np.any(np.isnan(y)):
-            # Create a mask for valid (non-NaN) data points in X
-            valid_mask_x = ~np.isnan(X[:, 0]) & ~np.isnan(X[:, 1])
-            X_valid = X[valid_mask_x]
-            y_valid = y[valid_mask_x]
-
-            # regression on enough data
-            if len(y_valid) > 3: 
-                coef, _ = nnls(X_valid, y_valid)
-                y_pred = X_valid @ coef
-
-                # Calculate residuals and mean
-                # wxh -3 because of dof, see the following,
-                # "Residual-scaled local standard deviations method for estimating noise in hyperspectral images"
-                sigma_local[k] = np.nanstd(y_valid - y_pred, ddof=3)
-                mu_local[k] = np.mean(y_valid)
-
-    return mu_local, sigma_local
-
-
-
-
-
-def block_regression_spectral_spatial(block):
-    '''
-    TODO:
-    for each NxN block, perform regression on k+1 (same pixel), k-1 (same pixel), and k from nearby pixel. 
-
-    '''
- 
-    # Assume no data value TODO
-    block = block.astype(float)
-    block[block <= -999] = np.nan
-
-    # create empty arrays
-    mu_local = np.full(block.shape[1], np.nan) 
-    sigma_local = np.full(block.shape[1], np.nan)  
-
-    for k in range(1, block.shape[1] - 1):
-
-        X = np.vstack((block[:, k - 1], block[:, k + 1])).T 
-        neighbor_k = np.roll(block[:, k], shift=1)  # Shift 1 to find a neighbor pixel
-        X = np.column_stack((X, neighbor_k))
-        y = block[:, k] 
-
-        # If y is valid, proceed
-        if not np.any(np.isnan(y)):
-            # Create a mask for valid (non-NaN) data points in X
-            valid_mask_x = ~np.isnan(X[:, 0]) & ~np.isnan(X[:, 1])
-            X_valid = X[valid_mask_x]
-            y_valid = y[valid_mask_x]
-
-            # regression on enough data
-            if len(y_valid) > 3: 
-                coef, _ = nnls(X_valid, y_valid)
-                y_pred = X_valid @ coef
-
-                # Calculate residuals and mean
-                # wxh -4 
-                sigma_local[k] = np.nanstd(y_valid - y_pred, ddof=4)
-                mu_local[k] = np.mean(y_valid)
-
-    return mu_local, sigma_local
-
-
-
-# function here to access array in multiprocessing
-def process_segment(segment_worker):
-
-    # remove data that is NaN (keep only positive values)
-    segment_worker = segment_worker[segment_worker[:,0] > -99]
-
-    # Make a blank set of mu and sigma for filling in (value for each wavelength)
-    mu_segment = np.full(segment_worker.shape[1], np.nan)
-    sigma_segment = np.full(segment_worker.shape[1], np.nan)
-    
-    # for k in range of wavelengths (except first and last)
-    for k in range(1, segment_worker.shape[1] - 1):
-
-        # create the X and y for MLR
-        X = np.vstack((segment_worker[:, k - 1], segment_worker[:, k + 1])).T
-        y = segment_worker[:, k]
-
-        if len(y) > 50: # from Gao, at least 50
-            coef, _ = nnls(X, y)
-            y_pred = X @ coef
-
-            # 3 DOF because of MLR
-            sigma_segment[k] = np.nanstd(y - y_pred, ddof=3)
-            mu_segment[k] = np.nanmean(y)
-
-    return mu_segment, sigma_segment
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 def pad_image(image, block_size):
@@ -256,9 +125,6 @@ def read_center_wavelengths(hdr_path):
     return wavelength
 
 
-
-
-
 def get_img_path_from_hdr(hdr_path):
     '''
     TODO:
@@ -292,7 +158,6 @@ def get_img_path_from_hdr(hdr_path):
         raise FileNotFoundError(f"No corresponding image file found for {hdr_path}")
     
     return img_path
-
 
 
 def linear_to_db(snr_linear):
