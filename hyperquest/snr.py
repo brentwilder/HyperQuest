@@ -210,33 +210,6 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
         if test_segment.shape[0] != 0:
             segment_data.append(test_segment)
 
-    # function here to access array in multiprocessing
-    def process_segment(segment_worker):
-
-        # remove data that is NaN (keep only positive values)
-        segment_worker = segment_worker[segment_worker[:,0] > -99]
-
-        # Make a blank set of mu and sigma for filling in (value for each wavelength)
-        mu_segment = np.full(segment_worker.shape[1], np.nan)
-        sigma_segment = np.full(segment_worker.shape[1], np.nan)
-        
-        # for k in range of wavelengths (except first and last)
-        for k in range(1, segment_worker.shape[1] - 1):
-
-            # create the X and y for MLR
-            X = np.vstack((segment_worker[:, k - 1], segment_worker[:, k + 1])).T
-            y = segment_worker[:, k]
-
-            if len(y) > 50: # from Gao, at least 50
-                coef, _ = nnls(X, y)
-                y_pred = X @ coef
-
-                # 3 DOF because of MLR
-                sigma_segment[k] = np.nanstd(y - y_pred, ddof=3)
-                mu_segment[k] = np.nanmean(y)
-
-        return mu_segment, sigma_segment
-
     # Parallel processing of all segments
     results = Parallel(n_jobs=ncpus, 
                        timeout=None)(delayed(process_segment)(segment) for segment in segment_data)
