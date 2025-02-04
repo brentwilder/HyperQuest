@@ -5,3 +5,4 @@ hysnr/test.py
 dist/
 .DS_STORE
 build/
+myenv

@@ -1,6 +1,5 @@
 import numpy as np
-import rasterio
-import rasterio.mask
+from spectral import *
 from joblib import Parallel, delayed
 from skimage.segmentation import slic
 from sklearn.decomposition import PCA
@@ -27,12 +26,9 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     '''
 
-    # Find img path.
-    img_path = get_img_path_from_hdr(hdr_path)
-
     # Load raster
-    with rasterio.open(img_path) as src:
-        array = src.read()
+    img_path = get_img_path_from_hdr(hdr_path)
+    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
 
     # mask waterbodies
     if mask_waterbodies is True:
@@ -99,12 +95,9 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     '''
 
-    # Find img path.
-    img_path = get_img_path_from_hdr(hdr_path)
-
     # Load raster
-    with rasterio.open(img_path) as src:
-        array = src.read()
+    img_path = get_img_path_from_hdr(hdr_path)
+    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
 
     # mask waterbodies
     if mask_waterbodies is True:
@@ -175,19 +168,14 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
 
     '''
 
-    # Find img path.
-    img_path = get_img_path_from_hdr(hdr_path)
 
     # Load raster
-    with rasterio.open(img_path) as src:
-        array = src.read() 
+    img_path = get_img_path_from_hdr(hdr_path)
+    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
 
     # mask waterbodies
     if mask_waterbodies is True:
         array = mask_water_using_ndwi(array, hdr_path)
-
-    # Rearrange to (rows, cols, bands) for segmentation
-    array = np.moveaxis(array, 0, -1)
 
     # Apply PCA 
     pca = PCA(n_components=n_pca)
@@ -203,15 +191,17 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
     # find unique SLIC segments
     unique_segments = np.unique(segments)
 
-    # Remove any SLIC segments that are in NaN regions prior to multiprocessing
-    segment_data = []
-    for u in unique_segments:
+    # Prepare SLIC segements for MLR in parallel
+    def process_segment(u):
         test_mask = (segments == u)
         test_segment = array[test_mask]
-        # remove data that is NaN (keep only positive values)
-        test_segment = test_segment[test_segment[:,0] > -99]
+        test_segment = test_segment[test_segment[:, 0] > -99]
         if test_segment.shape[0] != 0:
-            segment_data.append(test_segment)
+            return test_segment
+        else:
+            return None
+    segment_data = Parallel(n_jobs=ncpus)(delayed(process_segment)(u) for u in unique_segments)
+    segment_data = [seg for seg in segment_data if seg is not None]
 
     # Parallel processing of all segments depending on method selected
     if include_neighbor_pixel_in_mlr == False:

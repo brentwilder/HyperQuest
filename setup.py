@@ -1,8 +1,18 @@
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
+from Cython.Build import cythonize
+import numpy
 
-# Read the README file for the long description
 with open("README.md", "r") as fh:
     long_description = fh.read()
+
+
+ext_modules = [
+    Extension(
+        'hyperquest.mlr',
+        sources=['hyperquest/mlr.pyx'],
+        include_dirs=[numpy.get_include()]
+    )
+]
 
 setup(
     name="hyperquest", 
@@ -13,18 +23,16 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/brentwilder/hyperquest", 
+    ext_modules=ext_modules,
     packages=find_packages(), 
     install_requires=[
-        "numpy>=1.20.0", 
+        "numpy>=1.4.0", 
         "pandas>=1.2.0",
-        "geopandas>=0.9.0",
-        "rasterio>=1.2.0",
         "scikit-image>=0.18.0",
         "scikit-learn>=0.24.0",
         "joblib>=1.0.0", 
-        "scipy>=1.6.0",
-        "numba>=0.61.0",
-        "llvmlite>=0.44.0"
+        "cython>=3.0.11",
+        "spectral>=0.23.0"
         ],
     classifiers=[
         "Programming Language :: Python :: 3",
@@ -33,5 +41,5 @@ setup(
         "Development Status :: 3 - Alpha",
         "Topic :: Scientific/Engineering",
     ],
-    python_requires=">=3.7", 
+    python_requires=">=3.7"
 )

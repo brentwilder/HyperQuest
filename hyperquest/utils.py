@@ -57,18 +57,15 @@ def pad_image(image, block_size):
     pads image for NxN blocking to be allowed.
 
     '''
-    bands, height, width = image.shape
+    rows, cols, bands = image.shape
     
-    # Calculate padding for height and width
-    pad_height = (block_size - (height % block_size)) % block_size
-    pad_width = (block_size - (width % block_size)) % block_size
+    pad_rows = (block_size - (rows % block_size)) % block_size
+    pad_cols = (block_size - (cols % block_size)) % block_size
 
-    padding = [(0, 0),  
-                (0, pad_height), 
-                (0, pad_width)] 
+    padding = [(0, pad_rows), 
+               (0, pad_cols),
+               (0, 0)] 
 
-
-    # Apply padding 
     padded_image = np.pad(image, padding, 
                           mode='constant', 
                           constant_values=-9999)
@@ -82,20 +79,21 @@ def get_blocks(array, block_size):
     provides the full array of blocks based on NxN size.
 
     '''
+    rows, cols, bands = array.shape
 
     # Reshape into blocks
     blocked_image = array.reshape(
-        array.shape[0],  # Number of bands
-        array.shape[1] // block_size, block_size,  # Rows into blocks
-        array.shape[2] // block_size, block_size   # Columns into blocks
-    ).swapaxes(1, 2)  # Swap to ensure consistent block ordering
+        bands,
+        rows // block_size, block_size,  
+        cols // block_size, block_size
+        ).swapaxes(1, 2)
 
     # Flatten into tasks for processing (each task represents one pixel block)
     blocks = blocked_image.reshape(
-        blocked_image.shape[0],  # Number of bands
-        -1,                      # Flatten spatial
-        block_size * block_size  # Flatten block size
-    ).transpose(1, 2, 0)         # (num_blocks, block_pixels, bands)
+        blocked_image.shape[0],
+        -1,
+        block_size*block_size
+    ).transpose(1, 2, 0)       
 
     return blocks
 
