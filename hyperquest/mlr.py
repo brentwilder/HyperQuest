@@ -1,7 +1,9 @@
 import numpy as np
 from scipy.optimize import nnls
+from numba import njit
 
 
+@njit(nopython=True)
 def mlr_spectral(block):
     '''
     TODO
@@ -33,6 +35,7 @@ def mlr_spectral(block):
     return mu_block, sigma_block
 
 
+@njit(nopython=True)
 def mlr_spectral_spatial(block):
     '''
     TODO

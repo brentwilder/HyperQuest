@@ -6,10 +6,10 @@ with open("README.md", "r") as fh:
 
 setup(
     name="hyperquest", 
-    version="0.1.1", 
+    version="0.1.2", 
     author="Brent Wilder", 
     author_email="brentwilder@u.boisestate.edu",
-    description=" A Python package for Hyperspectral Quality Estimation and computing image-wide noise in hyperspectral imaging (imaging spectroscopy)",
+    description=" A Python package for Hyperspectral quality estimation in hyperspectral imaging (imaging spectroscopy)",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/brentwilder/hyperquest", 
@@ -23,7 +23,9 @@ setup(
         "scikit-learn>=0.24.0",
         "joblib>=1.0.0", 
         "scipy>=1.6.0",
-    ],
+        "numba>=0.61.0",
+        "llvmlite>=0.44.0"
+        ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",  
