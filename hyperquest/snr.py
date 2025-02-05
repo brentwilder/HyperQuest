@@ -1,11 +1,11 @@
 import numpy as np
-import rasterio
-import rasterio.mask
+from spectral import *
 from joblib import Parallel, delayed
 from skimage.segmentation import slic
 from sklearn.decomposition import PCA
 
 from .utils import *
+from .mlr import *
 
 
 def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True):
@@ -26,12 +26,9 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     '''
 
-    # Find img path.
-    img_path = get_img_path_from_hdr(hdr_path)
-
     # Load raster
-    with rasterio.open(img_path) as src:
-        array = src.read()
+    img_path = get_img_path_from_hdr(hdr_path)
+    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
 
     # mask waterbodies
     if mask_waterbodies is True:
@@ -44,7 +41,7 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     tasks = get_blocks(array, block_size)
     
     # Parallel processing of blocks using joblib
-    results = Parallel(n_jobs=ncpus)(delayed(block_regression_spectral)(block) for block in tasks)
+    results = Parallel(n_jobs=ncpus)(delayed(mlr_spectral)(block) for block in tasks)
 
     # Create empty lists
     local_mu = []
@@ -98,12 +95,9 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     '''
 
-    # Find img path.
-    img_path = get_img_path_from_hdr(hdr_path)
-
     # Load raster
-    with rasterio.open(img_path) as src:
-        array = src.read()
+    img_path = get_img_path_from_hdr(hdr_path)
+    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
 
     # mask waterbodies
     if mask_waterbodies is True:
@@ -116,7 +110,7 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     tasks = get_blocks(array, block_size)
     
     # Parallel processing of blocks using joblib
-    results = Parallel(n_jobs=ncpus)(delayed(block_regression_spectral_spatial)(block) for block in tasks)
+    results = Parallel(n_jobs=ncpus)(delayed(mlr_spectral_spatial)(block) for block in tasks)
 
     # Create empty lists
     local_mu = []
@@ -152,8 +146,9 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     return out
 
 
-def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, 
-           output_all=False, snr_in_db=False, mask_waterbodies=True):
+def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
+           include_neighbor_pixel_in_mlr=True, output_all=False, 
+           snr_in_db=False, mask_waterbodies=True):
     '''
     Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
 
@@ -163,6 +158,7 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
         compactness (float):Balances color proximity and space proximity. Higher values give more weight to space proximity, making superpixel shapes more square/cubic.see skimage.segmentation.slic for more.
         n_pca (int): Number of PCAs to compute and provide to SLIC segmentation.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
+        include_neighbor_pixel_in_mlr (bool, optional): If True, neighbor pixel is used in MLR (for k`). Else, MLR only contains spectral data (k+1, k-1).
         output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
         snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
         mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
@@ -172,19 +168,14 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
 
     '''
 
-    # Find img path.
-    img_path = get_img_path_from_hdr(hdr_path)
 
     # Load raster
-    with rasterio.open(img_path) as src:
-        array = src.read() 
+    img_path = get_img_path_from_hdr(hdr_path)
+    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
 
     # mask waterbodies
     if mask_waterbodies is True:
         array = mask_water_using_ndwi(array, hdr_path)
-
-    # Rearrange to (rows, cols, bands) for segmentation
-    array = np.moveaxis(array, 0, -1)
 
     # Apply PCA 
     pca = PCA(n_components=n_pca)
@@ -200,46 +191,27 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
     # find unique SLIC segments
     unique_segments = np.unique(segments)
 
-    # Remove any SLIC segments that are in NaN regions prior to multiprocessing
-    segment_data = []
-    for u in unique_segments:
+    # Prepare SLIC segements for MLR in parallel
+    def process_segment(u):
         test_mask = (segments == u)
         test_segment = array[test_mask]
-        # remove data that is NaN (keep only positive values)
-        test_segment = test_segment[test_segment[:,0] > -99]
+        test_segment = test_segment[test_segment[:, 0] > -99]
         if test_segment.shape[0] != 0:
-            segment_data.append(test_segment)
+            return test_segment
+        else:
+            return None
+    segment_data = Parallel(n_jobs=ncpus)(delayed(process_segment)(u) for u in unique_segments)
+    segment_data = [seg for seg in segment_data if seg is not None]
 
-    # function here to access array in multiprocessing
-    def process_segment(segment_worker):
-
-        # remove data that is NaN (keep only positive values)
-        segment_worker = segment_worker[segment_worker[:,0] > -99]
-
-        # Make a blank set of mu and sigma for filling in (value for each wavelength)
-        mu_segment = np.full(segment_worker.shape[1], np.nan)
-        sigma_segment = np.full(segment_worker.shape[1], np.nan)
+    # Parallel processing of all segments depending on method selected
+    if include_neighbor_pixel_in_mlr == False:
+        # Perform just spectral MLR
+        results = Parallel(n_jobs=ncpus, 
+                           timeout=None)(delayed(mlr_spectral)(segment) for segment in segment_data)
         
-        # for k in range of wavelengths (except first and last)
-        for k in range(1, segment_worker.shape[1] - 1):
-
-            # create the X and y for MLR
-            X = np.vstack((segment_worker[:, k - 1], segment_worker[:, k + 1])).T
-            y = segment_worker[:, k]
-
-            if len(y) > 50: # from Gao, at least 50
-                coef, _ = nnls(X, y)
-                y_pred = X @ coef
-
-                # 3 DOF because of MLR
-                sigma_segment[k] = np.nanstd(y - y_pred, ddof=3)
-                mu_segment[k] = np.nanmean(y)
-
-        return mu_segment, sigma_segment
-
-    # Parallel processing of all segments
-    results = Parallel(n_jobs=ncpus, 
-                       timeout=None)(delayed(process_segment)(segment) for segment in segment_data)
+    else: # perform spectral-spatial MLR using k` nearby neighbor.
+        results = Parallel(n_jobs=ncpus, 
+                           timeout=None)(delayed(mlr_spectral_spatial)(segment) for segment in segment_data) 
 
     # Aggregate results
     local_mu = np.array([res[0] for res in results])

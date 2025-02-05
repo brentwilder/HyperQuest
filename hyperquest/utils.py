@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.optimize import nnls
 import re
 from os.path import abspath, exists
 
@@ -52,116 +51,19 @@ def binning(local_mu, local_sigma, nbins):
     return signal.astype(float), noise.astype(float)
 
 
-
-
-
-def block_regression_spectral(block):
-    '''
-    TODO:
-    for each NxN block, perform regression on k+1, k-1 spectral data
-
-    '''
-    # Assume no data value TODO
-    block = block.astype(float)
-    block[block <= -999] = np.nan
-
-    # create empty arrays
-    mu_local = np.full(block.shape[1], np.nan) 
-    sigma_local = np.full(block.shape[1], np.nan)  
-
-    # loop through all but first and last band
-    for k in range(1, block.shape[1] - 1):
-        X = np.vstack((block[:, k - 1], block[:, k + 1])).T 
-        y = block[:, k] 
-
-        # If y is valid, proceed
-        if not np.any(np.isnan(y)):
-            # Create a mask for valid (non-NaN) data points in X
-            valid_mask_x = ~np.isnan(X[:, 0]) & ~np.isnan(X[:, 1])
-            X_valid = X[valid_mask_x]
-            y_valid = y[valid_mask_x]
-
-            # regression on enough data
-            if len(y_valid) > 3: 
-                coef, _ = nnls(X_valid, y_valid)
-                y_pred = X_valid @ coef
-
-                # Calculate residuals and mean
-                # wxh -3 because of dof, see the following,
-                # "Residual-scaled local standard deviations method for estimating noise in hyperspectral images"
-                sigma_local[k] = np.nanstd(y_valid - y_pred, ddof=3)
-                mu_local[k] = np.mean(y_valid)
-
-    return mu_local, sigma_local
-
-
-
-
-
-def block_regression_spectral_spatial(block):
-    '''
-    TODO:
-    for each NxN block, perform regression on k+1 (same pixel), k-1 (same pixel), and k from nearby pixel. 
-
-    '''
- 
-    # Assume no data value TODO
-    block = block.astype(float)
-    block[block <= -999] = np.nan
-
-    # create empty arrays
-    mu_local = np.full(block.shape[1], np.nan) 
-    sigma_local = np.full(block.shape[1], np.nan)  
-
-    for k in range(1, block.shape[1] - 1):
-
-        X = np.vstack((block[:, k - 1], block[:, k + 1])).T 
-        neighbor_k = np.roll(block[:, k], shift=1)  # Shift 1 to find a neighbor pixel
-        X = np.column_stack((X, neighbor_k))
-        y = block[:, k] 
-
-        # If y is valid, proceed
-        if not np.any(np.isnan(y)):
-            # Create a mask for valid (non-NaN) data points in X
-            valid_mask_x = ~np.isnan(X[:, 0]) & ~np.isnan(X[:, 1])
-            X_valid = X[valid_mask_x]
-            y_valid = y[valid_mask_x]
-
-            # regression on enough data
-            if len(y_valid) > 3: 
-                coef, _ = nnls(X_valid, y_valid)
-                y_pred = X_valid @ coef
-
-                # Calculate residuals and mean
-                # wxh -4 
-                sigma_local[k] = np.nanstd(y_valid - y_pred, ddof=4)
-                mu_local[k] = np.mean(y_valid)
-
-    return mu_local, sigma_local
-
-
-
 def pad_image(image, block_size):
     '''
     TODO:
     pads image for NxN blocking to be allowed.
 
     '''
-    bands, height, width = image.shape
-    
-    # Calculate padding for height and width
-    pad_height = (block_size - (height % block_size)) % block_size
-    pad_width = (block_size - (width % block_size)) % block_size
+    rows, cols, bands = image.shape
 
-    padding = [(0, 0),  
-                (0, pad_height), 
-                (0, pad_width)] 
+    pad_rows = (block_size - (rows % block_size)) % block_size
+    pad_cols = (block_size - (cols % block_size)) % block_size
 
-
-    # Apply padding 
-    padded_image = np.pad(image, padding, 
-                          mode='constant', 
-                          constant_values=-9999)
+    padded_image = np.full((rows + pad_rows, cols + pad_cols, bands), -9999, dtype=np.float64)
+    padded_image[:rows, :cols, :] = image  
 
     return padded_image
 
@@ -172,20 +74,17 @@ def get_blocks(array, block_size):
     provides the full array of blocks based on NxN size.
 
     '''
+    rows, cols, bands = array.shape
 
     # Reshape into blocks
     blocked_image = array.reshape(
-        array.shape[0],  # Number of bands
-        array.shape[1] // block_size, block_size,  # Rows into blocks
-        array.shape[2] // block_size, block_size   # Columns into blocks
-    ).swapaxes(1, 2)  # Swap to ensure consistent block ordering
+        rows // block_size, block_size,
+        cols // block_size, block_size,
+        bands
+        ).swapaxes(1, 2)
 
-    # Flatten into tasks for processing (each task represents one pixel block)
-    blocks = blocked_image.reshape(
-        blocked_image.shape[0],  # Number of bands
-        -1,                      # Flatten spatial
-        block_size * block_size  # Flatten block size
-    ).transpose(1, 2, 0)         # (num_blocks, block_pixels, bands)
+    # Flatten 
+    blocks = blocked_image.reshape(-1, block_size * block_size, bands)
 
     return blocks
 
@@ -213,9 +112,6 @@ def read_center_wavelengths(hdr_path):
             wavelength = np.array(wavelength).astype(float)
     
     return wavelength
-
-
-
 
 
 def get_img_path_from_hdr(hdr_path):
@@ -253,7 +149,6 @@ def get_img_path_from_hdr(hdr_path):
     return img_path
 
 
-
 def linear_to_db(snr_linear):
     '''
     TODO:
@@ -280,11 +175,11 @@ def mask_water_using_ndwi(array, img_path, ndwi_threshold=0.25):
     wavelengths = read_center_wavelengths(img_path)
     green_index = np.argmin(np.abs(wavelengths - 559))
     nir_index = np.argmin(np.abs(wavelengths - 864))
-    green = array[green_index, :, :] 
-    nir = array[nir_index, :, :] 
+    green = array[:, :, green_index] 
+    nir = array[:, :, nir_index] 
     ndwi = (green - nir) / (green + nir)
 
-    array[:, ndwi > ndwi_threshold] = -9999
+    array[(ndwi > ndwi_threshold)] = -9999
 
     return array
 
