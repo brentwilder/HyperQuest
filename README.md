@@ -44,12 +44,16 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 
 ## All functions
 
-| **Variable**        | **Method**        | **Description**                                                             |
-|---------------------|-------------------|-----------------------------------------------------------------------------|
-| **SNR**             | hrdsdc            | Homogeneous regions division and spectral de-correlation (Gao et al., 2008) |
-|                     | rlsd              | Residual-scaled local standard deviation (Gao et al., 2007)                 |
-|                     | ssdc              | Spectral and spatial de-correlation (Roger & Arnold, 1996)                  |
-| **Co-Registration** | scheffler_2017    | Uses AROSICS between VNIR-VSWIR as done in  Cogliati et al. (2021)          |
+## All functions
+
+| **Variable**        | **Method**                 | **Description**                                                             |
+|---------------------|----------------------------|-----------------------------------------------------------------------------|
+| **SNR**             | `hrdsdc()`                 | Homogeneous regions division and spectral de-correlation (Gao et al., 2008) |
+|                     | `rlsd()`                   | Residual-scaled local standard deviation (Gao et al., 2007)                 |
+|                     | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                  |
+| **Co-Registration** | `scheffler_2017()`         | Uses AROSICS between VNIR-VSWIR as done in Cogliati et al. (2021)           |
+
+
 
 
 
@@ -79,5 +83,7 @@ If you use HyperQuest in your research, please use the following BibTeX entry.
 - Gao, L. R., Zhang, B., Zhang, X., Zhang, W. J., & Tong, Q. X. (2008). A new operational method for estimating noise in hyperspectral images. IEEE Geoscience and remote sensing letters, 5(1), 83-87.
 
 - Roger, R. E., & Arnold, J. F. (1996). Reliably estimating the noise in AVIRIS hyperspectral images. International Journal of Remote Sensing, 17(10), 1951-1962.
+
+- Scheffler, D., Hollstein, A., Diedrich, H., Segl, K., & Hostert, P. (2017). AROSICS: An automated and robust open-source image co-registration software for multi-sensor satellite data. Remote sensing, 9(7), 676.
 
 - Tian, W., Zhao, Q., Kan, Z., Long, X., Liu, H., & Cheng, J. (2022). A new method for estimating signal-to-noise ratio in UAV hyperspectral images based on pure pixel extraction. IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, 16, 399-408.
