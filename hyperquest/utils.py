@@ -58,17 +58,12 @@ def pad_image(image, block_size):
 
     '''
     rows, cols, bands = image.shape
-    
+
     pad_rows = (block_size - (rows % block_size)) % block_size
     pad_cols = (block_size - (cols % block_size)) % block_size
 
-    padding = [(0, pad_rows), 
-               (0, pad_cols),
-               (0, 0)] 
-
-    padded_image = np.pad(image, padding, 
-                          mode='constant', 
-                          constant_values=-9999)
+    padded_image = np.full((rows + pad_rows, cols + pad_cols, bands), -9999, dtype=np.float64)
+    padded_image[:rows, :cols, :] = image  
 
     return padded_image
 
@@ -83,17 +78,13 @@ def get_blocks(array, block_size):
 
     # Reshape into blocks
     blocked_image = array.reshape(
-        bands,
-        rows // block_size, block_size,  
-        cols // block_size, block_size
+        rows // block_size, block_size,
+        cols // block_size, block_size,
+        bands
         ).swapaxes(1, 2)
 
-    # Flatten into tasks for processing (each task represents one pixel block)
-    blocks = blocked_image.reshape(
-        blocked_image.shape[0],
-        -1,
-        block_size*block_size
-    ).transpose(1, 2, 0)       
+    # Flatten 
+    blocks = blocked_image.reshape(-1, block_size * block_size, bands)
 
     return blocks
 
@@ -184,11 +175,11 @@ def mask_water_using_ndwi(array, img_path, ndwi_threshold=0.25):
     wavelengths = read_center_wavelengths(img_path)
     green_index = np.argmin(np.abs(wavelengths - 559))
     nir_index = np.argmin(np.abs(wavelengths - 864))
-    green = array[green_index, :, :] 
-    nir = array[nir_index, :, :] 
+    green = array[:, :, green_index] 
+    nir = array[:, :, nir_index] 
     ndwi = (green - nir) / (green + nir)
 
-    array[:, ndwi > ndwi_threshold] = -9999
+    array[(ndwi > ndwi_threshold)] = -9999
 
     return array
 
