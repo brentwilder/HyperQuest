@@ -18,6 +18,18 @@ pip install hyperquest
 ```
 
 
+## All Methods
+
+| **Result**          | **Method**                 | **Description**                                                                                                |
+|---------------------|----------------------------|----------------------------------------------------------------------------------------------------------------|
+| **SNR**             | `hrdsdc()`                 | Homogeneous regions division and spectral de-correlation (Gao et al., 2008)                                    |
+|                     | `rlsd()`                   | Residual-scaled local standard deviation (Gao et al., 2007)                                                    |
+|                     | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                                                     |
+| **Co-Registration** | `sub_pixel_shift()`        | Computes sub pixel co-registration between the VNIR & VSWIR imagers using skimage phase_cross_correlation      |
+
+
+
+
 ## Usage example
 
 - see [Example Using EMIT](tutorials/example_using_EMIT.ipynb) for a recent use case.
@@ -41,15 +53,6 @@ plt.scatter(wavelengths, snr, color='black', s=100, alpha=0.7)
 ```
 ![SNR Plot](tests/plots/demo_snr.png)
 
-
-## All Methods
-
-| **Result**          | **Method**                 | **Description**                                                                                                |
-|---------------------|----------------------------|----------------------------------------------------------------------------------------------------------------|
-| **SNR**             | `hrdsdc()`                 | Homogeneous regions division and spectral de-correlation (Gao et al., 2008)                                    |
-|                     | `rlsd()`                   | Residual-scaled local standard deviation (Gao et al., 2007)                                                    |
-|                     | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                                                     |
-| **Co-Registration** | `sub_pixel_shift()`        | Computes sub pixel co-registration between the VNIR & VSWIR imagers using skimage phase_cross_correlation      |
 
 
 
