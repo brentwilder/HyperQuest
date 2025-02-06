@@ -26,7 +26,7 @@ pip install hyperquest
 |                     | `rlsd()`                   | Residual-scaled local standard deviation (Gao et al., 2007)                                                    |
 |                     | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                                                     |
 | **Co-Registration** | `sub_pixel_shift()`        | Computes sub pixel co-registration between the VNIR & VSWIR imagers using skimage phase_cross_correlation      |
-
+| **Smile**           | `smile_metric()`           | Similar to MATLAB "smileMetric". Computes derivatives of O2 and CO2 absorption features.                       |
 
 
 
