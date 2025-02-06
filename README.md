@@ -89,4 +89,5 @@ If you use HyperQuest in your research, please use the following BibTeX entry.
 
 - Scheffler, D., Hollstein, A., Diedrich, H., Segl, K., & Hostert, P. (2017). AROSICS: An automated and robust open-source image co-registration software for multi-sensor satellite data. Remote sensing, 9(7), 676.
 
-- Tian, W., Zhao, Q., Kan, Z., Long, X., Liu, H., & Cheng, J. (2022). A new method for estimating signal-to-noise ratio in UAV hyperspectral images based on pure pixel extraction. IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, 16, 399-408.
+- Thompson, D. R., Green, R. O., Bradley, C., Brodrick, P. G., Mahowald, N., Dor, E. B., ... & Zandbergen, S. (2024). On-orbit calibration and performance of the EMIT imaging spectrometer. Remote Sensing of Environment, 303, 113986.
+
