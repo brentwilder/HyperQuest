@@ -105,13 +105,38 @@ def read_center_wavelengths(hdr_path):
 
     wavelength = None
     for line in open(hdr_path, 'r'):
-        if 'wavelength =' in line or 'wavelength=' in line: 
+        if 'wavelength =' in str.lower(line) or 'wavelength=' in str.lower(line): 
             wavelength = re.findall(r"[+-]?\d+\.\d+", line)
             wavelength = ','.join(wavelength)
             wavelength = wavelength.split(',')
             wavelength = np.array(wavelength).astype(float)
     
     return wavelength
+
+
+def read_fwhm(hdr_path):
+    '''
+    TODO:
+    Reads FWHM from the hdr file
+
+    '''
+    
+    # get absolute path 
+    hdr_path = abspath(hdr_path)
+
+    # Raise exception if does not end in .hdr
+    if not hdr_path.lower().endswith('.hdr'):
+        raise ValueError(f'Invalid file format: {hdr_path}. Expected an .hdr file.')
+
+    fwhm = None
+    for line in open(hdr_path, 'r'):
+        if 'fwhm =' in str.lower(line) or 'fwhm=' in str.lower(line): 
+            fwhm = re.findall(r"[+-]?\d+\.\d+", line)
+            fwhm = ','.join(fwhm)
+            fwhm = fwhm.split(',')
+            fwhm = np.array(fwhm).astype(float)
+    
+    return fwhm
 
 
 def get_img_path_from_hdr(hdr_path):

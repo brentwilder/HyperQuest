@@ -26,7 +26,7 @@ pip install hyperquest
 |                     | `rlsd()`                   | Residual-scaled local standard deviation (Gao et al., 2007)                                                    |
 |                     | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                                                     |
 | **Co-Registration** | `sub_pixel_shift()`        | Computes sub pixel co-registration between the VNIR & VSWIR imagers using skimage phase_cross_correlation      |
-
+| **Smile**           | `smile_metric()`           | Similar to MATLAB "smileMetric". Computes derivatives of O2 and CO2 absorption features.                       |
 
 
 
@@ -76,6 +76,8 @@ If you use HyperQuest in your research, please use the following BibTeX entry.
 - Cogliati, S., Sarti, F., Chiarantini, L., Cosi, M., Lorusso, R., Lopinto, E., ... & Colombo, R. (2021). The PRISMA imaging spectroscopy mission: overview and first performance analysis. Remote sensing of environment, 262, 112499.
 
 - Curran, P. J., & Dungan, J. L. (1989). Estimation of signal-to-noise: a new procedure applied to AVIRIS data. IEEE Transactions on Geoscience and Remote sensing, 27(5), 620-628.
+
+- Dadon, A., Ben-Dor, E., & Karnieli, A. (2010). Use of derivative calculations and minimum noise fraction transform for detecting and correcting the spectral curvature effect (smile) in Hyperion images. IEEE Transactions on Geoscience and Remote Sensing, 48(6), 2603-2612.
 
 - Gao, L., Wen, J., & Ran, Q. (2007, November). Residual-scaled local standard deviations method for estimating noise in hyperspectral images. In Mippr 2007: Multispectral Image Processing (Vol. 6787, pp. 290-298). SPIE.
 
