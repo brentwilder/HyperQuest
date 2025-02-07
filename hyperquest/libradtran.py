@@ -21,7 +21,7 @@ def lrt_prepper(elevation, utc_time, lat, lon, vza):
     '''
 
 
-    # use astropy or similar to compute sza from utc_time TODO
+    # use pysolar compute sza from utc_time TODO
     sza = ''
     phi0 = 'sun azimuth'
     
