@@ -32,7 +32,8 @@ setup(
         "scikit-learn>=0.24.0",
         "joblib>=1.0.0", 
         "cython>=3.0.11",
-        "spectral>=0.23.0"
+        "spectral>=0.23.0",
+        "dem_stitcher>=2.5.12"
         ],
     classifiers=[
         "Programming Language :: Python :: 3",
