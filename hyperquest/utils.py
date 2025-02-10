@@ -137,6 +137,9 @@ def read_hdr_metadata(hdr_path):
             start_time = line.split('=')[-1].strip()
             obs_time = parser.parse(start_time).replace(tzinfo=timezone.utc)
 
+    # ensure these are the same length
+    if len(wavelength) != len(fwhm):
+        raise ValueError('Wavelength and FWHM arrays have different lengths.')
 
     return wavelength, fwhm, obs_time
 
@@ -193,7 +196,7 @@ def linear_to_db(snr_linear):
     return snr_db
     
 
-def mask_water_using_ndwi(array, img_path, ndwi_threshold=0.25):
+def mask_water_using_ndwi(array, hdr_path, ndwi_threshold=0.25):
     '''
     TODO:
     Returns array where NDWI greater than a threshold are set to -9999 (masked out).
@@ -204,7 +207,7 @@ def mask_water_using_ndwi(array, img_path, ndwi_threshold=0.25):
 
     '''
 
-    wavelengths = read_center_wavelengths(img_path)
+    wavelengths,_,_ = read_hdr_metadata(hdr_path)
     green_index = np.argmin(np.abs(wavelengths - 559))
     nir_index = np.argmin(np.abs(wavelengths - 864))
     green = array[:, :, green_index] 

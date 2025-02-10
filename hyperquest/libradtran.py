@@ -183,7 +183,7 @@ def lrt_create_args_for_pool(h,
 
 
 
-def lrt_to_pandas_dataframe(h,aod, altitude_km, lrt_out_dir):
+def lrt_to_pandas_dataframe(h,aod, altitude_km, sza, lrt_out_dir):
     '''
 
     Save the data to panadas
@@ -212,7 +212,7 @@ def lrt_to_pandas_dataframe(h,aod, altitude_km, lrt_out_dir):
     # to one pandas dataframe
     df = pd.DataFrame(data=df_irr['Wavelength'], columns=['Wavelength'])
     df['l0'] = df_r['uu']
-    df['t_up'] = df_t['eglo']
+    df['t_up'] = df_t['eglo'] / np.cos(np.radians(sza)) 
     df['s'] = df_s2['sph_alb']
     df['e_dir'] = df_irr['edir']
     df['e_diff'] = df_irr['edn']
@@ -224,49 +224,3 @@ def lrt_to_pandas_dataframe(h,aod, altitude_km, lrt_out_dir):
 
     
     return  df
-
-
-
-def lrt_reader(h, aod, alt, sza, rho_surface,
-               g_l0, g_tup, g_s, g_edir, g_edn,
-               sensor_wavelengths, 
-               cosi=1, shadow=1, svf=1, slope=0):
-    
-    '''
-    TODO
-
-    '''
-    # Ensure optimization stays in bounds
-    if h <= 1:
-        h=1
-
-    # Setup arrays
-    W = np.copy(sensor_wavelengths)
-    H = np.array(h)
-
-    # GRID INTERPS
-    l0 = g_l0((H,W))
-    t_up = g_tup((H,W))
-    s = g_s((H,W))
-    edir0 = g_edir((H,W))
-    edn0 = g_edn((H,W))
-
-    # Correct to local conditions
-    #############################  
-    t_up = t_up / np.cos(np.radians(sza)) 
-
-    # Adjust local Fdir and Fdiff
-    edir =  edir0 * cosi  * shadow #shadow: 0=shadow, 1=sun
-    edn =  edn0  * svf
-    
-    # Combine diffuse and direct into S_total
-    s_total = edir + edn
-
-    # Add in adjacent pixels estimate (terrain influence)
-    # https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2020JD034294
-    # This only impacts diffuse component.
-    ct = max(0,((1 + np.cos(np.radians(slope))) / 2 ) - svf)
-    s_total = s_total + (edn0*rho_surface * ct)
-
-
-    return l0, t_up, s, s_total

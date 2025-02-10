@@ -33,10 +33,6 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
     # get wavelengths
     w, fwhm, obs_time = read_hdr_metadata(hdr_path)
 
-    # ensure these are the same length
-    if len(w) != len(fwhm):
-        raise ValueError('Wavelength and FWHM arrays have different lengths.')
-
     #  first, ensure the wavelengths covered the span of o2 and co2 features
     # If they do not, then these are filled with -9999.
     if np.max(w) < 800:

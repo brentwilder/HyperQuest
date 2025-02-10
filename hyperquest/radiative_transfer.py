@@ -39,12 +39,11 @@ def run_libradtran(h2o_mm, aod_at_550nm, sensor_zenith_angle, sensor_azimith_ang
     
     # Get Copernicus DEM data based on bounding box in hdr 
     # (assume mus = mu0 ; flat assumption) ...  X is an mxn numpy array
-    #X, _ = stitch_dem(bounding_box, dem_name='glo_90')
-    #X = X[:, :].flatten()
-    #X = X[X < 8848] #mt everest
-    #X = X[X > -430] #deadsea
-    #X = X[~np.isnan(X)]
-    X = 132
+    X, _ = stitch_dem(bounding_box, dem_name='glo_90')
+    X = X[:, :].flatten()
+    X = X[X < 8848] #mt everest
+    X = X[X > -430] #deadsea
+    X = X[~np.isnan(X)]
     altitude_km = np.nanmean(X) / 1000
 
     # Get average lat and lon
@@ -82,8 +81,8 @@ def run_libradtran(h2o_mm, aod_at_550nm, sensor_zenith_angle, sensor_azimith_ang
                                                       doy, atmos, o3_DU, albedo, 
                                                       lrt_out_dir, path_to_libradtran_bin)
     
-    # set max workers 
-    ncpus = (min(ncpus, 5))
+    # set max workers to 2 for now - RAM dominant
+    ncpus = (min(ncpus, 2))
 
     # Go trhough runs in parallel
     Parallel(n_jobs=ncpus)(delayed(subprocess.run)(cmd, shell=True, cwd=path_to_libradtran_bin) 
@@ -91,7 +90,7 @@ def run_libradtran(h2o_mm, aod_at_550nm, sensor_zenith_angle, sensor_azimith_ang
                            )
 
     # Create pandas datatable after runs
-    df = lrt_to_pandas_dataframe(h2o_mm, aod_at_550nm, altitude_km, lrt_out_dir)
+    df = lrt_to_pandas_dataframe(h2o_mm, aod_at_550nm, altitude_km, sza, lrt_out_dir)
 
     # Save to csv file
     csv_path = f'{lrt_out_dir}/radiative_transfer_output.csv'
