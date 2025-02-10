@@ -1,56 +1,50 @@
 # Import libraries
 import os
-import subprocess
 import numpy as np
 import pandas as pd
 from spectral import *
-from scipy import interpolate
-from scipy.interpolate import RegularGridInterpolator
 
 
-def lrt_prepper(elevation, utc_time, lat, lon, vza):
 
+def get_libradtran_install_path(user_input_path):
     '''
     TODO
+    '''
+    user_input_path = os.path.abspath(user_input_path)
 
-    So in summary users need
-    phi = sensor azimuth , and vza = viewer zenith angle.
+    # Check if they already gave the bin directory
+    if os.path.basename(user_input_path) == 'bin' and os.path.isdir(user_input_path):
+        return user_input_path
 
-    
+    # Check if 'bin' exists inside the given directory
+    bin_path = os.path.join(user_input_path, 'bin')
+    if os.path.isdir(bin_path):
+        return bin_path
+    else:
+        raise FileNotFoundError('Could not determine location of libRadtran installation.')
 
+
+    return
+
+
+
+def get_libradtran_output_dir(hdr_path):
+    '''
+    TODO
     '''
 
-
-    # use pysolar compute sza from utc_time TODO
-    sza = ''
-    phi0 = 'sun azimuth'
+    filename = os.path.splitext(os.path.basename(hdr_path))[0]
     
-    # convert to km
-    elevation = elevation / 1000 
+    # directory where hdr_path is located
+    parent_dir = os.path.dirname(os.path.abspath(hdr_path))
+    
+    # Define the rtm output directory
+    lrt_out_dir = os.path.join(parent_dir, f'rtm-{filename}')
 
-    # Check to use subarctic or midlat summer atmosphere
-    if abs(lat) >= 60:
-        atmos = 'ss'
-    else:
-        atmos = 'ms'
+    # Create the directory if it does not exist
+    os.makedirs(lrt_out_dir, exist_ok=True)
 
-    # Assign N / S / E / W
-    if lat >= 0:
-        lat_inp = str(f'N {abs(lat)}')
-    else:
-        lat_inp = str(f'S {abs(lat)}')
-
-    if lon >= 0:
-        lon_inp = str(f'E {abs(lon)}')
-    else:
-        lon_inp = str(f'W {abs(lon)}')
-
-    # cos vza
-    umu = np.cos(np.radians(vza))
-
-
-    return vza, umu, sza, phi0, lat_inp, lon_inp, elevation, atmos
-
+    return lrt_out_dir
 
 
 
@@ -61,13 +55,19 @@ def write_lrt_inp(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, lon_inp
 
     adapted from: https://github.com/MarcYin/libradtran
 
+        Cm-1 resolution of libRadtran 
+
+        at 700nm : 0.05nm 
+        At 1000nm : 0.1nm 
+        At 2500nm : 0.625nm
+
 
     '''
     foutstr = out_str[0] + out_str[1]
     fname = f'{lrt_dir}/lrt_h20_{h}_aot_{aod}_alb_{a}_alt_{round(altitude_km*1000)}_{foutstr}'
     with open(f'{fname}.INP', 'w') as f:
-        f.write('source solar\n')  # extraterrestrial spectrum
-        f.write('wavelength 340 2510\n')  # set range for lambda
+        f.write(f'source solar {path_to_libradtran_base}/data/solar_flux/kurudz_0.1nm.dat\n') 
+        f.write('wavelength 660 860\n')  
         f.write(f'atmosphere_file {path_to_libradtran_base}/data/atmmod/afgl{atmos}.dat\n')
         f.write(f'albedo {a}\n') 
         f.write(f'umu {umu}\n') # Cosine of the view zenith angle
@@ -75,6 +75,7 @@ def write_lrt_inp(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, lon_inp
         f.write(f'phi {phi}\n') # VAA
         f.write(f'sza {sza}\n')  # solar zenith angle
         f.write('rte_solver disort\n')
+        f.write(f'number_of_streams 8\n')
         f.write('pseudospherical\n')
         f.write(f'latitude {lat_inp}\n')
         f.write(f'longitude {lon_inp}\n')
@@ -87,7 +88,7 @@ def write_lrt_inp(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, lon_inp
         f.write(f'altitude {altitude_km}\n')    
         f.write(f'aerosol_default\n')  
         f.write(f'aerosol_species_file continental_average\n') 
-        f.write(f'aerosol_set_tau_at_wvl 550 {aod}\n')  
+        #f.write(f'aerosol_set_tau_at_wvl 550 {aod}\n')  #ignore for now
         f.write(f'output_quantity transmittance\n')  
         f.write(f'output_user lambda {out_str[1]}\n')  
         f.write('quiet')
@@ -102,12 +103,13 @@ def write_lrt_inp_irrad(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, l
     # Run here manually for irrad
     fname = f'{lrt_dir}/lrt_h20_{h}_aot_{aod}_alt_{round(altitude_km*1000)}_IRRAD'
     with open(f'{fname}.INP', 'w') as f:
-        f.write('source solar\n') 
-        f.write('wavelength 340 2510\n')  
+        f.write(f'source solar {path_to_libradtran_base}/data/solar_flux/kurudz_0.1nm.dat\n') 
+        f.write('wavelength 660 860\n')  
         f.write(f'atmosphere_file {path_to_libradtran_base}/data/atmmod/afgl{atmos}.dat\n')
         f.write(f'albedo {a}\n')  
         f.write(f'sza {sza}\n')  
         f.write('rte_solver disort\n')  
+        f.write(f'number_of_streams 8\n')
         f.write('pseudospherical\n')
         f.write(f'latitude {lat_inp}\n')
         f.write(f'longitude {lon_inp}\n')
@@ -115,7 +117,7 @@ def write_lrt_inp_irrad(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, l
         f.write(f'zout {altitude_km}\n')  
         f.write(f'aerosol_default\n')  
         f.write(f'aerosol_species_file continental_average\n')  
-        f.write(f'aerosol_set_tau_at_wvl 550 {aod}\n')    
+        #f.write(f'aerosol_set_tau_at_wvl 550 {aod}\n')     #ignore for now 
         f.write(f'mol_modify O3 {o3} DU\n')  
         f.write(f'mol_abs_param reptran fine\n')   # Fine cm-1
         f.write(f'mol_modify H2O {h} MM\n')    
@@ -127,7 +129,7 @@ def write_lrt_inp_irrad(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, l
 
 
 
-def lrt_create_args_for_pool(h20_range,
+def lrt_create_args_for_pool(h,
                              aod,
                              altitude_km,
                              umu, phi0, 
@@ -135,48 +137,45 @@ def lrt_create_args_for_pool(h20_range,
                              sza, lat_inp,
                              lon_inp, doy, atmos, 
                              o3, albedo,
-                             lrt_dir, 
-                             path_to_libradtran_bin):
+                             lrt_dir, path_to_libradtran_bin):
     '''
-    Takes in the range of water column vapor, a550, and altitude
-    and creates input commands for libRadtran, that will be ran in multipool.
-
+    TODO
     '''
     # Run the LRT LUT pipeline
     path_to_libradtran_base = os.path.dirname(path_to_libradtran_bin)
 
     lrt_inp = []
     lrt_inp_irrad = []
-    for h in h20_range:   
-        # path radiance run
-        cmd = write_lrt_inp(o3, h,aod,0, ['toa','uu'], umu, phi0, phi, sza, 
-                        lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
-                        lrt_dir, path_to_libradtran_base)
-        lrt_inp.append([cmd,path_to_libradtran_bin])
-        
-        # upward transmittance run
-        cmd = write_lrt_inp(o3, h,aod,0, ['sur','eglo'], umu, phi0, phi, vza, 
-                        lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
-                        lrt_dir, path_to_libradtran_base)
-        lrt_inp.append([cmd,path_to_libradtran_bin])
 
-        # spherical albedo run 1
-        cmd = write_lrt_inp(o3, h,aod,0.15, ['sur','eglo'], umu, phi0, phi, sza, 
-                        lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
-                        lrt_dir, path_to_libradtran_base)
-        lrt_inp.append([cmd,path_to_libradtran_bin])
-        
-        # spherical albedo run 2
-        cmd = write_lrt_inp(o3, h,aod,0.5, ['sur','eglo'], umu, phi0, phi, sza, 
-                        lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
-                        lrt_dir, path_to_libradtran_base)   
-        lrt_inp.append([cmd,path_to_libradtran_bin])
+    # path radiance run
+    cmd = write_lrt_inp(o3, h,aod,0, ['toa','uu'], umu, phi0, phi, sza, 
+                    lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
+                    lrt_dir, path_to_libradtran_base)
+    lrt_inp.append([cmd,path_to_libradtran_bin])
+    
+    # upward transmittance run
+    cmd = write_lrt_inp(o3, h,aod,0, ['sur','eglo'], umu, phi0, phi, vza, 
+                    lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
+                    lrt_dir, path_to_libradtran_base)
+    lrt_inp.append([cmd,path_to_libradtran_bin])
 
-        # incoming solar irradiance run
-        cmd = write_lrt_inp_irrad(o3, h,aod, albedo, ['toa','uu'], umu, phi0, phi, sza, 
-                        lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
-                        lrt_dir, path_to_libradtran_base)
-        lrt_inp_irrad.append([cmd,path_to_libradtran_bin])
+    # spherical albedo run 1
+    cmd = write_lrt_inp(o3, h,aod,0.15, ['sur','eglo'], umu, phi0, phi, sza, 
+                    lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
+                    lrt_dir, path_to_libradtran_base)
+    lrt_inp.append([cmd,path_to_libradtran_bin])
+    
+    # spherical albedo run 2
+    cmd = write_lrt_inp(o3, h,aod,0.5, ['sur','eglo'], umu, phi0, phi, sza, 
+                    lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
+                    lrt_dir, path_to_libradtran_base)   
+    lrt_inp.append([cmd,path_to_libradtran_bin])
+
+    # incoming solar irradiance run
+    cmd = write_lrt_inp_irrad(o3, h,aod, albedo, ['toa','uu'], umu, phi0, phi, sza, 
+                    lat_inp, lon_inp, doy, altitude_km, atmos, path_to_libradtran_bin, 
+                    lrt_dir, path_to_libradtran_base)
+    lrt_inp_irrad.append([cmd,path_to_libradtran_bin])
 
     return lrt_inp_irrad, lrt_inp
 
@@ -184,87 +183,47 @@ def lrt_create_args_for_pool(h20_range,
 
 
 
-
-
-
-def lut_grid(h20_range,aod, altitude_km, path_to_img_base, sensor_wavelengths):
+def lrt_to_pandas_dataframe(h,aod, altitude_km, lrt_out_dir):
     '''
 
-    Grid the LUT so they are continuous variables for numerical optimization.
+    Save the data to panadas
 
     '''
-    # LRT dir
-    lrt_dir = f'{path_to_img_base}_albedo/libradtran'
 
-    # Create empty grids
-    l0_arr = np.empty(shape=(len(h20_range), len(sensor_wavelengths)))
-    t_up_arr = np.empty(shape=(len(h20_range),len(sensor_wavelengths)))
-    s_arr  = np.empty(shape=(len(h20_range), len(sensor_wavelengths)))
-    edir_arr = np.empty(shape=(len(h20_range),len(sensor_wavelengths)))
-    edn_arr = np.empty(shape=(len(h20_range), len(sensor_wavelengths)))
+    # Now load in each of them into pandas to perform math.
+    df_r = pd.read_csv(f'{lrt_out_dir}/lrt_h20_{h}_aot_{aod}_alb_0_alt_{round(altitude_km*1000)}_toauu.out', sep='\s+', header=None)
+    df_r.columns = ['Wavelength','uu']
 
-    for i in range(0, len(h20_range)):
+    df_t = pd.read_csv(f'{lrt_out_dir}/lrt_h20_{h}_aot_{aod}_alb_0_alt_{round(altitude_km*1000)}_sureglo.out', sep='\s+', header=None)
+    df_t.columns = ['Wavelength', 'eglo']
 
-        h = h20_range[i]
+    df_s1 = pd.read_csv(f'{lrt_out_dir}/lrt_h20_{h}_aot_{aod}_alb_0.15_alt_{round(altitude_km*1000)}_sureglo.out', sep='\s+', header=None)
+    df_s1.columns = ['Wavelength', 'eglo']
 
-        # Now load in each of them into pandas to perform math.
-        df_r = pd.read_csv(f'{lrt_dir}/lrt_h20_{h}_aot_{aod}_alb_0_alt_{round(altitude_km*1000)}_toauu.out', delim_whitespace=True, header=None)
-        df_r.columns = ['Wavelength','uu']
+    df_s2 = pd.read_csv(f'{lrt_out_dir}/lrt_h20_{h}_aot_{aod}_alb_0.5_alt_{round(altitude_km*1000)}_sureglo.out', sep='\s+', header=None)
+    df_s2.columns = ['Wavelength', 'eglo']
 
-        df_t = pd.read_csv(f'{lrt_dir}/lrt_h20_{h}_aot_{aod}_alb_0_alt_{round(altitude_km*1000)}_sureglo.out', delim_whitespace=True, header=None)
-        df_t.columns = ['Wavelength', 'eglo']
+    df_irr = pd.read_csv(f'{lrt_out_dir}/lrt_h20_{h}_aot_{aod}_alt_{round(altitude_km*1000)}_IRRAD.out', sep='\s+', header=None)
+    df_irr.columns = ['Wavelength', 'edir', 'edn']
 
-        df_s1 = pd.read_csv(f'{lrt_dir}/lrt_h20_{h}_aot_{aod}_alb_0.15_alt_{round(altitude_km*1000)}_sureglo.out', delim_whitespace=True, header=None)
-        df_s1.columns = ['Wavelength', 'eglo']
+    # Compute S (atmos sphere albedo)
+    df_s2['sph_alb'] = (df_s2['eglo'] - df_s1['eglo']) / (0.5 * df_s2['eglo'] -  0.15 * df_s1['eglo'])
 
-        df_s2 = pd.read_csv(f'{lrt_dir}/lrt_h20_{h}_aot_{aod}_alb_0.5_alt_{round(altitude_km*1000)}_sureglo.out', delim_whitespace=True, header=None)
-        df_s2.columns = ['Wavelength', 'eglo']
+    # to one pandas dataframe
+    df = pd.DataFrame(data=df_irr['Wavelength'], columns=['Wavelength'])
+    df['l0'] = df_r['uu']
+    df['t_up'] = df_t['eglo']
+    df['s'] = df_s2['sph_alb']
+    df['e_dir'] = df_irr['edir']
+    df['e_diff'] = df_irr['edn']
 
-        df_irr = pd.read_csv(f'{lrt_dir}/lrt_h20_{h}_aot_{aod}_alt_{round(altitude_km*1000)}_IRRAD.out', delim_whitespace=True, header=None)
-        df_irr.columns = ['Wavelength', 'edir', 'edn']
+    # Set units to be microW/cm2/nm/sr (common for EMIT & PRISMA)
+    df['e_dir'] = df['e_dir'] / 10
+    df['e_diff'] = df['e_diff'] / 10
+    df['l0'] = df['l0'] / 10
 
-        # Fit spline to match  for L_0 (path radiance)
-        fun_r = interpolate.interp1d(df_r['Wavelength'], df_r['uu'], kind='slinear')
-        l0 = fun_r(sensor_wavelengths)
-
-        # Compute t_up (upward transmittance)
-        fun_t = interpolate.interp1d(df_t['Wavelength'], df_t['eglo'], kind='slinear')
-        t_up = fun_t(sensor_wavelengths)   
-
-        # Compute S (atmos sphere albedo)
-        df_s2['sph_alb'] = (df_s2['eglo'] - df_s1['eglo']) / (0.5 * df_s2['eglo'] -  0.15 * df_s1['eglo'])
-        fun_s = interpolate.interp1d(df_s2['Wavelength'], df_s2['sph_alb'], kind='slinear')
-        s = fun_s(sensor_wavelengths)
-
-        # Fit spline to match edir and edn
-        f_dir = interpolate.interp1d(df_irr['Wavelength'], df_irr['edir'], kind='slinear')
-        edir = f_dir(sensor_wavelengths)
-
-        f_edn = interpolate.interp1d(df_irr['Wavelength'], df_irr['edn'], kind='slinear')
-        edn = f_edn(sensor_wavelengths)
-
-        # append the results
-        l0_arr[i,:] = l0
-        t_up_arr[i,:] = t_up
-        s_arr[i,:] = s
-        edir_arr[i,:] = edir
-        edn_arr[i,:] = edn
     
-    # Now prep for new grid
-    W = np.copy(sensor_wavelengths)
-    H = np.array(h20_range)
-
-    # Create grid functions
-    g_l0 = RegularGridInterpolator((H,W), l0_arr, method='linear')
-    g_tup = RegularGridInterpolator((H, W), t_up_arr, method='linear')
-    g_s = RegularGridInterpolator((H, W), s_arr, method='linear')
-    g_edir = RegularGridInterpolator((H, W), edir_arr, method='linear')
-    g_edn = RegularGridInterpolator((H, W), edn_arr, method='linear')
-
-
-    return  g_l0, g_tup, g_s, g_edir, g_edn
-
-
+    return  df
 
 
 
@@ -308,10 +267,6 @@ def lrt_reader(h, aod, alt, sza, rho_surface,
     # This only impacts diffuse component.
     ct = max(0,((1 + np.cos(np.radians(slope))) / 2 ) - svf)
     s_total = s_total + (edn0*rho_surface * ct)
-
-    # Correct units to be microW/cm2/nm/sr
-    s_total = s_total / 10
-    l0 = l0 / 10
 
 
     return l0, t_up, s, s_total

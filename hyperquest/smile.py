@@ -31,10 +31,7 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
     array = np.ma.masked_equal(array, no_data_value)
   
     # get wavelengths
-    w = read_center_wavelengths(hdr_path)
-
-    # get fwhm
-    fwhm = read_fwhm(hdr_path)
+    w, fwhm, obs_time = read_hdr_metadata(hdr_path)
 
     # ensure these are the same length
     if len(w) != len(fwhm):

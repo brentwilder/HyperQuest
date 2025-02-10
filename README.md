@@ -8,6 +8,8 @@
 
 `hyperquest`: A Python package for estimating image-wide quality estimation metrics of hyperspectral imaging (imaging spectroscopy). Computations are sped up and scale with number of cpus.
 
+Important: this package assumes your hyperspectral data is in ENVI format with a .HDR file.
+
 
 ## Installation Instructions
 
@@ -20,14 +22,15 @@ pip install hyperquest
 
 ## All Methods
 
-| **Result**               | **Method**                 | **Description**                                                                                                |
-|--------------------------|----------------------------|----------------------------------------------------------------------------------------------------------------|
-| **SNR**                  | `hrdsdc()`                 | Homogeneous regions division and spectral de-correlation (Gao et al., 2008)                                    |
-|                          | `rlsd()`                   | Residual-scaled local standard deviation (Gao et al., 2007)                                                    |
-|                          | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                                                     |
-| **Co-Registration**      | `sub_pixel_shift()`        | Computes sub pixel co-registration between the VNIR & VSWIR imagers using skimage phase_cross_correlation      |
-| **Smile**                | `smile_metric()`           | Similar to MATLAB "smileMetric". Computes derivatives of O2 and CO2 absorption features.                       |
-| **Spectral Calibration** | `wavelength_dispersion()`  | for now will build out with libRadtran... Use OE framework as in Thompson et al. (2024)                        |
+| **Output**               | **Method**                 | **Description**                                                                                                    |
+|--------------------------|----------------------------|--------------------------------------------------------------------------------------------------------------------|
+| **SNR**                  | `hrdsdc()`                 | Homogeneous regions division and spectral de-correlation (Gao et al., 2008)                                        |
+|                          | `rlsd()`                   | Residual-scaled local standard deviation (Gao et al., 2007)                                                        |
+|                          | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                                                         |
+| **Co-Registration**      | `sub_pixel_shift()`        | Computes sub pixel co-registration between the VNIR & VSWIR imagers using skimage phase_cross_correlation          |
+| **Smile**                | `smile_metric()`           | Similar to MATLAB "smileMetric". Computes derivatives of O2 and CO2 absorption features.                           |
+| **Radiative Transfer**   | `run_libradtran()`         | Runs libRadtran based on user input geometry and atmosphere. Saves to a .csv file for use in Spectral Calibration. |
+| **Spectral Calibration** | `cogliati_2021()`          | based on method from Cogliati et al. (2021)                                                                        |
 
 
 

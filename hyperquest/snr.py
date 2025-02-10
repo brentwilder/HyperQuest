@@ -58,7 +58,7 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     mu, sigma = binning(local_mu, local_sigma, nbins)
 
     # remove atmos windows
-    w = read_center_wavelengths(hdr_path)
+    w, fwhm, obs_time = read_hdr_metadata(hdr_path)
     mu = mask_atmos_windows(mu, w)
     sigma = mask_atmos_windows(sigma, w)
 
@@ -127,7 +127,7 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     mu, sigma = binning(local_mu, local_sigma, nbins)
 
     # remove atmos windows
-    w = read_center_wavelengths(hdr_path)
+    w, fwhm, obs_time = read_hdr_metadata(hdr_path)
     mu = mask_atmos_windows(mu, w)
     sigma = mask_atmos_windows(sigma, w)
 
@@ -225,7 +225,7 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
     sigma = np.concatenate(([np.nan], sigma_valid, [np.nan]))
 
     # remove atmos windows
-    w = read_center_wavelengths(hdr_path)
+    w, fwhm, obs_time = read_hdr_metadata(hdr_path)
     mu = mask_atmos_windows(mu, w)
     sigma = mask_atmos_windows(sigma, w)
 

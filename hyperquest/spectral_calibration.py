@@ -70,15 +70,13 @@ def wavelength_dispersion(hdr_path, sensor_zenith_angle, sensor_azimuth_angle,
 
 
     # Plug all information into radiative transfer model
-    # generate tables where the following vary:
-    #   h20_range = [1, 6.125, 13.25, 25.5, 37.75, 50] (mm)
-    # Parallel computing here
+    # Parallel computing here (max 5 CPU)
 
 
     # "At runtime, we calculate an initial guess of surface reflectance using a band ratio water vapor retrieval as in Schläpfer et al. (1998). "
 
 
-    # Feed everything into OE method.
+    # Feed everything into Least Squares
 
 
 
