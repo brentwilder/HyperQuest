@@ -29,8 +29,9 @@ pip install hyperquest
 |                          | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                                                         |
 | **Co-Registration**      | `sub_pixel_shift()`        | Computes sub pixel co-registration between the VNIR & VSWIR imagers using skimage phase_cross_correlation          |
 | **Smile**                | `smile_metric()`           | Similar to MATLAB "smileMetric". Computes derivatives of O2 and CO2 absorption features.                           |
+|                          | `wavelength_shift_o2a()`   | Similar to method in Cogliati et al. (2021) to solve for nm shift at O2-A. Requires radiative transfer model run.  |
 | **Radiative Transfer**   | `run_libradtran()`         | Runs libRadtran based on user input geometry and atmosphere. Saves to a .csv file for use in Spectral Calibration. |
-| **Spectral Calibration** | `cogliati_2021()`          | based on method from Cogliati et al. (2021)                                                                        |
+
 
 
 
