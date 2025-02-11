@@ -103,5 +103,12 @@ def run_libradtran(h2o_mm, aod_at_550nm, sensor_zenith_angle, sensor_azimith_ang
 
 # TESTING
 hdr_path = '/Users/brent/Code/HyperQuest/tests/data/SISTER_EMIT_L1B_RDN_20220827T091626_000.hdr'
+my_lrt_path = '/Users/brent/Documents/Albedo/libRadtran-2.0.4'
 
-run_libradtran(5, 0.1, 30, 180,hdr_path, libradtran_path="/Users/brent/Documents/Albedo/libRadtran-2.0.4")
+# TODO
+run_libradtran(5, # h20 get this from MODIS
+               0.1, # AOT@550 get this from MODIS
+               30, # VZA get this from OBS file
+               180, # VAA get this from OBS file
+               hdr_path, 
+               libradtran_path=my_lrt_path)

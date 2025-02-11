@@ -86,9 +86,6 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
 
 
 
-
-
-
 def wavelength_shift_o2a(hdr_path, path_to_rtm_output_csv, 
                          mask_waterbodies=True, no_data_value=-9999):
     '''
@@ -166,4 +163,4 @@ hdr_path = '/Users/brent/Code/HyperQuest/tests/data/SISTER_EMIT_L1B_RDN_20220827
 
 path_to_rtm_output_csv = "/Users/brent/Code/HyperQuest/tests/data/rtm-SISTER_EMIT_L1B_RDN_20220827T091626_000/radiative_transfer_output.csv"
 
-cogliati_2021(hdr_path, path_to_rtm_output_csv, absorption_band_target=760, mask_waterbodies=True, no_data_value=-9999)
+wavelength_shift_o2a(hdr_path, path_to_rtm_output_csv, absorption_band_target=760, mask_waterbodies=True, no_data_value=-9999)
