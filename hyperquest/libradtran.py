@@ -67,7 +67,7 @@ def write_lrt_inp(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, lon_inp
     fname = f'{lrt_dir}/lrt_h20_{h}_aot_{aod}_alb_{a}_alt_{round(altitude_km*1000)}_{foutstr}'
     with open(f'{fname}.INP', 'w') as f:
         f.write(f'source solar {path_to_libradtran_base}/data/solar_flux/kurudz_0.1nm.dat\n') 
-        f.write('wavelength 660 860\n')  
+        f.write('wavelength 549 860\n')  
         f.write(f'atmosphere_file {path_to_libradtran_base}/data/atmmod/afgl{atmos}.dat\n')
         f.write(f'albedo {a}\n') 
         f.write(f'umu {umu}\n') # Cosine of the view zenith angle
@@ -88,7 +88,7 @@ def write_lrt_inp(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, lon_inp
         f.write(f'altitude {altitude_km}\n')    
         f.write(f'aerosol_default\n')  
         f.write(f'aerosol_species_file continental_average\n') 
-        #f.write(f'aerosol_set_tau_at_wvl 550 {aod}\n')  #ignore for now
+        f.write(f'aerosol_set_tau_at_wvl 550 {aod}\n')  
         f.write(f'output_quantity transmittance\n')  
         f.write(f'output_user lambda {out_str[1]}\n')  
         f.write('quiet')
@@ -104,7 +104,7 @@ def write_lrt_inp_irrad(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, l
     fname = f'{lrt_dir}/lrt_h20_{h}_aot_{aod}_alt_{round(altitude_km*1000)}_IRRAD'
     with open(f'{fname}.INP', 'w') as f:
         f.write(f'source solar {path_to_libradtran_base}/data/solar_flux/kurudz_0.1nm.dat\n') 
-        f.write('wavelength 660 860\n')  
+        f.write('wavelength 549 860\n')  
         f.write(f'atmosphere_file {path_to_libradtran_base}/data/atmmod/afgl{atmos}.dat\n')
         f.write(f'albedo {a}\n')  
         f.write(f'sza {sza}\n')  
@@ -117,7 +117,7 @@ def write_lrt_inp_irrad(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, l
         f.write(f'zout {altitude_km}\n')  
         f.write(f'aerosol_default\n')  
         f.write(f'aerosol_species_file continental_average\n')  
-        #f.write(f'aerosol_set_tau_at_wvl 550 {aod}\n')     #ignore for now 
+        f.write(f'aerosol_set_tau_at_wvl 550 {aod}\n')  
         f.write(f'mol_modify O3 {o3} DU\n')  
         f.write(f'mol_abs_param reptran fine\n')   # Fine cm-1
         f.write(f'mol_modify H2O {h} MM\n')    
