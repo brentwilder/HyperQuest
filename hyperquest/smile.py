@@ -112,7 +112,7 @@ def wavelength_shift_o2a(hdr_path, path_to_rtm_output_csv,
     w_sensor, fwhm, obs_time = read_hdr_metadata(hdr_path)
 
     # Only include window for o2-a
-    window = (w_sensor >= 650) & (w_sensor <= 870)
+    window = (w_sensor >= 730) & (w_sensor <= 790)
     w_sensor = w_sensor[window]
     fwhm = fwhm[window]
     l_toa_observed = array[:, window]
@@ -120,7 +120,7 @@ def wavelength_shift_o2a(hdr_path, path_to_rtm_output_csv,
     # Read out the results from rtm 
     # l0, t_up, sph_alb, s_total
     df = pd.read_csv(path_to_rtm_output_csv)
-    df = df[(df['Wavelength'] >= 700) & (df['Wavelength'] <= 800)]
+    df = df[(df['Wavelength'] >= 730) & (df['Wavelength'] <= 790)]
     s_total = df['e_dir'].values + df['e_diff'].values
     w_rtm = df['Wavelength'].values
     t_up = df['t_up'].values
@@ -132,15 +132,14 @@ def wavelength_shift_o2a(hdr_path, path_to_rtm_output_csv,
 
     # Still todo:
     # this is getting better..
-    # but can possibly normalize it?
-    #  also   should limit the window in inversion to be actually just 50-60nm range
-        # should reviist that Guanter paper next time
+    # in inversion , similar to ATBD EMIT, do TOA reflectance
+    #
 
 
     # 
     # Next steps for optimization
     # Gather initial vector  [CWL, FWHM]
-    x0 = [5] + fwhm.tolist()
+    x0 = [0] + fwhm.tolist()
     # next radiance is computed assuming gaussian SRF
     # repeats cross-track.
     for l in l_toa_observed:

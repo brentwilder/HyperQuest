@@ -24,14 +24,17 @@ def fun_min(x0, rtm_radiance, rtm_wave,w_sensor, l_toa_observed):
 
     residual =  l_toa_sensor_model - l_toa_observed
 
+    ix = np.argwhere((rtm_wave < 730) & (rtm_wave > 790))
+    residual = np.delete(residual, ix)
+
     sse = np.sum(residual**2)
 
     # Plot for debugging
     print(dlambda)
-    plt.scatter(w_sensor, l_toa_observed, color='red', label='Observed Radiance')
-    plt.scatter(cwl, l_toa_sensor_model, color='blue', label='Modeled Radiance')
-    plt.legend()
-    plt.show()
+    #plt.scatter(w_sensor, l_toa_observed, color='red', label='Observed Radiance')
+    #plt.scatter(cwl, l_toa_sensor_model, color='blue', label='Modeled Radiance')
+    #plt.legend()
+    #plt.show()
 
 
 
