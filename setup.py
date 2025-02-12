@@ -16,7 +16,7 @@ ext_modules = [
 
 setup(
     name="hyperquest", 
-    version="0.1.5", 
+    version="0.1.6", 
     author="Brent Wilder", 
     author_email="brentwilder@u.boisestate.edu",
     description=" A Python package for Hyperspectral quality estimation in hyperspectral imaging (imaging spectroscopy)",
@@ -33,7 +33,7 @@ setup(
         "joblib>=1.0.0", 
         "cython>=3.0.11",
         "spectral>=0.23.0",
-        "dem_stitcher>=2.5.12"
+        "dem_stitcher>=2.5"
         ],
     classifiers=[
         "Programming Language :: Python :: 3",
