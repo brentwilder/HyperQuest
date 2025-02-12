@@ -101,20 +101,3 @@ def run_libradtran(h2o_mm, aod_at_550nm, sensor_zenith_angle, sensor_azimith_ang
 
 
     return df
-
-
-
-
-
-# TESTING
-hdr_path = '/Users/brent/Code/HyperQuest/tests/data/SISTER_EMIT_L1B_RDN_20220827T091626_000.hdr'
-my_lrt_path = '/Users/brent/Documents/Albedo/libRadtran-2.0.4'
-
-# TODO
-run_libradtran(22.8, # h20 estimate from MODIS
-               0.122, # AOT@550 estimate from MODIS
-               9.274039, # VZA get this from OBS file (EMIT L1B)
-               11.815027, # VAA get this from OBS file (EMIT L1B)
-               hdr_path, 
-               ncpus=2,
-               libradtran_path=my_lrt_path)
