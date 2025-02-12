@@ -22,7 +22,7 @@ pip install hyperquest
 
 ## All Methods
 
-| **Output**               | **Method**                 | **Description**                                                                                                                               |
+| **Category**             | **Method**                 | **Description**                                                                                                                               |
 |--------------------------|----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | **SNR**                  | `hrdsdc()`                 | Homogeneous regions division and spectral de-correlation (Gao et al., 2008)                                                                   |
 |                          | `rlsd()`                   | Residual-scaled local standard deviation (Gao et al., 2007)                                                                                   |
