@@ -55,11 +55,7 @@ def write_lrt_inp(o3, h , aod, a, out_str, umu, phi0, phi, sza, lat_inp, lon_inp
 
     adapted from: https://github.com/MarcYin/libradtran
 
-        Cm-1 resolution of libRadtran 
-
-        at 700nm : 0.05nm 
-        At 1000nm : 0.1nm 
-        At 2500nm : 0.625nm
+        Cm-1 resolution of libRadtran ... which is output from lrt as 0.1 nm spectral resolution.
 
 
     '''
