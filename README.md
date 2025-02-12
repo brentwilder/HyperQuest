@@ -29,7 +29,7 @@ pip install hyperquest
 |                          | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                                                         |
 | **Co-Registration**      | `sub_pixel_shift()`        | Computes sub pixel co-registration between the VNIR & VSWIR imagers using skimage phase_cross_correlation          |
 | **Smile**                | `smile_metric()`           | Similar to MATLAB "smileMetric". Computes derivatives of O2 and CO2 absorption features (Dadon et al., 2010).      |
-|                          | `wavelength_shift_o2a()`   | Similar to method in Cogliati et al. (2021) to solve for nm shift at O2-A. Requires radiative transfer model run.  |
+|                          | `nodd_o2a()`               | Similar to method in Felde et al. (2003) to solve for nm shift at O2-A. Requires radiative transfer model run.     |
 | **Radiative Transfer**   | `run_libradtran()`         | Runs libRadtran based on user input geometry and atmosphere. Saves to a .csv file for use in Spectral Calibration. |
 
 
@@ -38,23 +38,10 @@ pip install hyperquest
 
 ## Usage example
 
-- see [Example Using EMIT](tutorials/example_using_EMIT.ipynb) for a recent use case.
+- see [SNR example](tutorials/example_using_EMIT.ipynb) where different SNR methods are computed over Libya-4.
+- see [Smile example ](tutorials/testing_smile_methods.ipynb) where different smile methods are computed over Libya-4.
 
 
-
-## Citing HyperQuest (STILL WORKING ON THIS, TODO:)
-
-If you use HyperQuest in your research, please use the following BibTeX entry.
-
-```bibtex
-@article{wilder202x,
-  title={x},
-  author={Brenton A. Wilder},
-  journal={x},
-  url={x},
-  year={x}
-}
-```
 
 
 ## References:
@@ -64,6 +51,8 @@ If you use HyperQuest in your research, please use the following BibTeX entry.
 - Curran, P. J., & Dungan, J. L. (1989). Estimation of signal-to-noise: a new procedure applied to AVIRIS data. IEEE Transactions on Geoscience and Remote sensing, 27(5), 620-628.
 
 - Dadon, A., Ben-Dor, E., & Karnieli, A. (2010). Use of derivative calculations and minimum noise fraction transform for detecting and correcting the spectral curvature effect (smile) in Hyperion images. IEEE Transactions on Geoscience and Remote Sensing, 48(6), 2603-2612.
+
+- Felde, G. W., Anderson, G. P., Cooley, T. W., Matthew, M. W., Berk, A., & Lee, J. (2003, July). Analysis of Hyperion data with the FLAASH atmospheric correction algorithm. In IGARSS 2003. 2003 IEEE International Geoscience and Remote Sensing Symposium. Proceedings (IEEE Cat. No. 03CH37477) (Vol. 1, pp. 90-92). IEEE.
 
 - Gao, L., Wen, J., & Ran, Q. (2007, November). Residual-scaled local standard deviations method for estimating noise in hyperspectral images. In Mippr 2007: Multispectral Image Processing (Vol. 6787, pp. 290-298). SPIE.
 

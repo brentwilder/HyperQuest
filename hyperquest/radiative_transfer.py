@@ -6,11 +6,11 @@ from joblib import Parallel, delayed
 from os.path import abspath
 import subprocess
 
-from libradtran import *
-from utils import *
+from .libradtran import *
+from .utils import *
 
 def run_libradtran(h2o_mm, aod_at_550nm, sensor_zenith_angle, sensor_azimith_angle,
-                   hdr_path, libradtran_path, ncpus=1, o3_DU=300, albedo=0.1):
+                   hdr_path, libradtran_path, ncpus=1, o3_DU=300, albedo=0.15):
     '''
     TODO
     '''
@@ -116,4 +116,5 @@ run_libradtran(22.8, # h20 estimate from MODIS
                9.274039, # VZA get this from OBS file (EMIT L1B)
                11.815027, # VAA get this from OBS file (EMIT L1B)
                hdr_path, 
+               ncpus=2,
                libradtran_path=my_lrt_path)
