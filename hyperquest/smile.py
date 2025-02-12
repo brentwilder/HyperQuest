@@ -1,7 +1,12 @@
 import numpy as np
+import pandas as pd
 from spectral import *
+from joblib import Parallel, delayed
 
 from .utils import *
+from .optimization import *
+
+
 
 def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
     '''
@@ -28,25 +33,24 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
         array = mask_water_using_ndwi(array, hdr_path)
 
     # Mask no data values
-    array = np.ma.masked_equal(array, no_data_value)
+    array[array <= no_data_value] = np.nan
+
+    # create an interior-mask for keeping only columns where it is not any NaN
+    # NOTE this may cause data loss if masking waterbodies
+    array_for_mask = np.nanmean(array[:,:,1], axis=0)
+    interior_ix = ~np.isnan(array_for_mask).any(axis=0)
   
     # get wavelengths
-    w = read_center_wavelengths(hdr_path)
+    w, fwhm, obs_time = read_hdr_metadata(hdr_path)
 
-    # get fwhm
-    fwhm = read_fwhm(hdr_path)
-
-    # ensure these are the same length
-    if len(w) != len(fwhm):
-        raise ValueError('Wavelength and FWHM arrays have different lengths.')
+    # set up outputs
+    co2_mean_output = np.full(array.shape[1], fill_value=np.nan)
+    co2_std_ouput = np.full(array.shape[1], fill_value=np.nan)
+    o2_mean_output = np.full(array.shape[1], fill_value=np.nan)
+    o2_std_ouput = np.full(array.shape[1], fill_value=np.nan)
 
     #  first, ensure the wavelengths covered the span of o2 and co2 features
-    # If they do not, then these are filled with -9999.
     if np.max(w) < 800:
-        co2_mean = np.full(array.shape[1], fill_value=-9999)
-        co2_std = np.full(array.shape[1], fill_value=-9999)
-        o2_mean = np.full_like(o2_mean, fill_value=-9999)
-        o2_std = np.full_like(o2_mean, fill_value=-9999)
         return o2_mean, co2_mean, o2_std, co2_std
 
     # Find closest band to co2 and O3
@@ -66,21 +70,85 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
     o2_mean = np.nanmean(o2_dband, axis=0)
     o2_std = np.nanstd(o2_dband, axis=0)
 
+    # only include interior columns (not allow all nan)
+    o2_mean_output[interior_ix] = o2_mean
+    o2_std_ouput[interior_ix] = o2_std
+
+
     # likely has enough data to find CO2
     if np.max(w)>2100: 
         co2_b1 = array[:, :, co2_index] 
         co2_b2 = array[:, :, co2_index+1]
-
         fwhm_bar_co2 = np.nanmean([fwhm[co2_index], fwhm[co2_index+1]])
-
         co2_dband = (co2_b1 + co2_b2) / fwhm_bar_co2
-
         co2_mean = np.nanmean(co2_dband, axis=0)
         co2_std = np.nanstd(co2_dband, axis=0)
-
-    else: # return -9999 just for the co2 data
-        co2_mean = np.full(array.shape[1], fill_value=-9999)
-        co2_std = np.full(array.shape[1], fill_value=-9999)
+        co2_mean_output[interior_ix] = co2_mean
+        co2_std_ouput[interior_ix] = co2_std
 
 
     return o2_mean, co2_mean, o2_std, co2_std
+
+
+def nodd_o2a(hdr_path, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_waterbodies=True, no_data_value=-9999):
+    '''
+    TODO
+
+    '''
+    
+    # Load raster
+    img_path = get_img_path_from_hdr(hdr_path)
+    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
+
+    # mask waterbodies
+    if mask_waterbodies is True:
+        array = mask_water_using_ndwi(array, hdr_path)
+
+    # Mask no data values
+    array[array <= no_data_value] = np.nan
+
+    # Average in down-track direction (reduce to 1 row)
+    array = np.nanmean(array, axis=0)
+
+    # Get data from hdr
+    w_sensor, fwhm, obs_time = read_hdr_metadata(hdr_path)
+
+    # Only include window for o2-a
+    window = (w_sensor >= 730) & (w_sensor <= 790)
+    w_sensor = w_sensor[window]
+    fwhm = fwhm[window]
+    l_toa_observed = array[:, window]
+
+    # Read out the results from rtm 
+    # l0, t_up, sph_alb, s_total
+    df = pd.read_csv(path_to_rtm_output_csv)
+    df = df[(df['Wavelength'] >= 730) & (df['Wavelength'] <= 790)]
+    s_total = df['e_dir'].values + df['e_diff'].values
+    w_rtm = df['Wavelength'].values
+    t_up = df['t_up'].values
+    sph_alb = df['s'].values
+    l0 = df['l0'].values
+    rho_s =  np.full_like(s_total, fill_value=rho_s)
+    l_toa_rtm = l0 + (1/np.pi) * ((rho_s * s_total* t_up) / (1 - sph_alb * rho_s))
+
+    # Next steps for optimization
+    # Gather initial vector  [dlambda, dFWHM]
+    dfwhm = np.full_like(fwhm, fill_value= 0.0)
+    x0 = [0.0] + dfwhm.tolist()
+
+    # paralell cross-track CWL and FHWM
+    results = Parallel(n_jobs=ncpus)(
+        delayed(invert_cwl_and_fwhm)(x0, l, l_toa_rtm, w_rtm, w_sensor, fwhm) 
+        for l in l_toa_observed
+    )
+
+    # Convert results to arrays
+    cwl_opt, fwhm_opt = map(np.array, zip(*results))
+
+    # for user show the band that is closest to 760 that is being referred to.
+    o2_a =  np.argmin(np.abs(w_sensor-760))
+    sensor_band_near_760 = w_sensor[o2_a]
+    fwhm_near_760 = fwhm[o2_a]
+
+
+    return cwl_opt, fwhm_opt, sensor_band_near_760, fwhm_near_760

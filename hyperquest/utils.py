@@ -1,6 +1,8 @@
 import numpy as np
 import re
 from os.path import abspath, exists
+from dateutil import parser
+from datetime import timezone
 
 
 def binning(local_mu, local_sigma, nbins):
@@ -89,54 +91,59 @@ def get_blocks(array, block_size):
     return blocks
 
 
-def read_center_wavelengths(hdr_path):
+
+
+def read_hdr_metadata(hdr_path):
     '''
-    TODO:
-    Reads center wavelengths from the hdr file
+    Reads wavelengths, FWHM,  and  acquisition time from  .hdr file.
 
     '''
-    
-    # get absolute path 
+
+    # Get absolute path
     hdr_path = abspath(hdr_path)
 
-    # Raise exception if does not end in .hdr
+    # Raise exception if file does not end in .hdr
     if not hdr_path.lower().endswith('.hdr'):
         raise ValueError(f'Invalid file format: {hdr_path}. Expected an .hdr file.')
 
+    # Initialize variables
     wavelength = None
+    fwhm = None
+    start_time = None
+
+    # Read the .hdr file and extract data
     for line in open(hdr_path, 'r'):
-        if 'wavelength =' in str.lower(line) or 'wavelength=' in str.lower(line): 
+        line_lower = line.strip().lower()
+
+        # wavelengths
+        if 'wavelength' in line_lower and 'unit' not in line_lower:
             wavelength = re.findall(r"[+-]?\d+\.\d+", line)
             wavelength = ','.join(wavelength)
             wavelength = wavelength.split(',')
             wavelength = np.array(wavelength).astype(float)
-    
-    return wavelength
+            # Convert wavelengths from micrometers to nanometers if necessary
+            if wavelength[0] < 300:
+                wavelength = wavelength*1000
 
-
-def read_fwhm(hdr_path):
-    '''
-    TODO:
-    Reads FWHM from the hdr file
-
-    '''
-    
-    # get absolute path 
-    hdr_path = abspath(hdr_path)
-
-    # Raise exception if does not end in .hdr
-    if not hdr_path.lower().endswith('.hdr'):
-        raise ValueError(f'Invalid file format: {hdr_path}. Expected an .hdr file.')
-
-    fwhm = None
-    for line in open(hdr_path, 'r'):
-        if 'fwhm =' in str.lower(line) or 'fwhm=' in str.lower(line): 
+        # FWHM
+        elif 'fwhm' in line_lower:
             fwhm = re.findall(r"[+-]?\d+\.\d+", line)
             fwhm = ','.join(fwhm)
             fwhm = fwhm.split(',')
-            fwhm = np.array(fwhm).astype(float)
-    
-    return fwhm
+            fwhm = np.array(fwhm, dtype=np.float64)    
+
+        # Extract acquisition start time
+        elif 'start' in line_lower and 'time' in line_lower:
+            start_time = line.split('=')[-1].strip()
+            obs_time = parser.parse(start_time).replace(tzinfo=timezone.utc)
+
+    # ensure these are the same length
+    if len(wavelength) != len(fwhm):
+        raise ValueError('Wavelength and FWHM arrays have different lengths.')
+
+    return wavelength, fwhm, obs_time
+
+
 
 
 def get_img_path_from_hdr(hdr_path):
@@ -174,6 +181,9 @@ def get_img_path_from_hdr(hdr_path):
     return img_path
 
 
+
+
+
 def linear_to_db(snr_linear):
     '''
     TODO:
@@ -186,7 +196,7 @@ def linear_to_db(snr_linear):
     return snr_db
     
 
-def mask_water_using_ndwi(array, img_path, ndwi_threshold=0.25):
+def mask_water_using_ndwi(array, hdr_path, ndwi_threshold=0.25):
     '''
     TODO:
     Returns array where NDWI greater than a threshold are set to -9999 (masked out).
@@ -197,7 +207,7 @@ def mask_water_using_ndwi(array, img_path, ndwi_threshold=0.25):
 
     '''
 
-    wavelengths = read_center_wavelengths(img_path)
+    wavelengths,_,_ = read_hdr_metadata(hdr_path)
     green_index = np.argmin(np.abs(wavelengths - 559))
     nir_index = np.argmin(np.abs(wavelengths - 864))
     green = array[:, :, green_index] 
