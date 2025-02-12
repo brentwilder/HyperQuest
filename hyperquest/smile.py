@@ -86,23 +86,11 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
 
 
 
-def cogliati_2021_o2a(hdr_path, path_to_rtm_output_csv, 
-                      mask_waterbodies=True, no_data_value=-9999):
+def wavelength_shift_o2a(hdr_path, path_to_rtm_output_csv, 
+                         surface_reflectance,
+                         mask_waterbodies=True, no_data_value=-9999):
     '''
     TODO
-
-    NOTE / TODO: 
-
-    1) compute 549 - 850 nm for libradtran, also get these wavelengths range from Sensor.
-
-    2) Solve analytically L-TOA for surface reflectance based on atmos inputs.
-
-    3) Change x0 to be [dlambda-shift, FWHM_i] 
-        -> dlambda will change the few bands CWL in that window together.
-        -> FWHM_i is each of the bands FWHM
-        --> with SRF, and convuloution, these can produce a new Band radiance.
-
-    Reduces to 1 row as in Thompson et al. 2024
 
     '''
     
@@ -123,32 +111,44 @@ def cogliati_2021_o2a(hdr_path, path_to_rtm_output_csv,
     # Get data from hdr
     w_sensor, fwhm, obs_time = read_hdr_metadata(hdr_path)
 
-    # Only include bands near 760 for O2-A.
-    wavelength_min = 549 # nm
-    wavelength_max = 860  # nm
-    ix = np.where((w_sensor >= wavelength_min) & (w_sensor <= wavelength_max))[0]
-    w_sensor = w_sensor[ix] 
-    l_toa_observed = array[:, ix]
-
-
-    # Gather initial vector
-    # [d-lambda shift, fwhm]
-
+    # Only include window for o2-a
+    window = (w_sensor >= 650) & (w_sensor <= 870)
+    w_sensor = w_sensor[window]
+    fwhm = fwhm[window]
+    l_toa_observed = array[:, window]
 
     # Read out the results from rtm 
     # l0, t_up, sph_alb, s_total
     df = pd.read_csv(path_to_rtm_output_csv)
+    df = df[(df['Wavelength'] >= 700) & (df['Wavelength'] <= 800)]
     s_total = df['e_dir'].values + df['e_diff'].values
     w_rtm = df['Wavelength'].values
     t_up = df['t_up'].values
     sph_alb = df['s'].values
     l0 = df['l0'].values
+    surface_reflectance =  np.full_like(s_total, fill_value=0.4)
+    l_toa_rtm = l0 + (1/np.pi) * ((surface_reflectance * s_total* t_up) / (1 - sph_alb * surface_reflectance))
 
-    # TODO
-    # Things to consider...
-    # 1. Reflectance must be known in this method currently (as well AOT and water)
-    # 2. then use L-toa and compare with sensor using SRF...
-    # it's not great bc it requires a lot of information.. but a good first method to d here.
+
+    # Still todo:
+    # this is getting better..
+    # but can possibly normalize it?
+    #  also   should limit the window in inversion to be actually just 50-60nm range
+        # should reviist that Guanter paper next time
+
+
+    # 
+    # Next steps for optimization
+    # Gather initial vector  [CWL, FWHM]
+    x0 = [5] + fwhm.tolist()
+    # next radiance is computed assuming gaussian SRF
+    # repeats cross-track.
+    for l in l_toa_observed:
+        if l[0]>0:
+            invert_cwl_and_fwhm(x0,l, l_toa_rtm, w_rtm, w_sensor)
+            break
+
+
 
 
 
@@ -165,5 +165,5 @@ hdr_path = '/Users/brent/Code/HyperQuest/tests/data/SISTER_EMIT_L1B_RDN_20220827
 
 path_to_rtm_output_csv = "/Users/brent/Code/HyperQuest/tests/data/rtm-SISTER_EMIT_L1B_RDN_20220827T091626_000/radiative_transfer_output.csv"
 
-cogliati_2021_o2a(hdr_path, path_to_rtm_output_csv, 
+wavelength_shift_o2a(hdr_path, path_to_rtm_output_csv, surface_reflectance=0.4,
                   mask_waterbodies=True, no_data_value=-9999)
