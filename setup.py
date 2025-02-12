@@ -33,7 +33,8 @@ setup(
         "joblib>=1.0.0", 
         "cython>=3.0.11",
         "spectral>=0.23.0",
-        "dem_stitcher>=2.5"
+        "dem_stitcher>=2.5",
+        "opencv-python>=4.11"
         ],
     classifiers=[
         "Programming Language :: Python :: 3",
