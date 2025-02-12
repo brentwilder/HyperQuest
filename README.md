@@ -36,7 +36,6 @@ pip install hyperquest
 
 
 
-
 ## Usage example
 
 - see [SNR example](tutorials/example_using_EMIT.ipynb) where different SNR methods are computed over Libya-4.
