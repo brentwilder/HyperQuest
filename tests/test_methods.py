@@ -3,7 +3,7 @@ import numpy as np
 from spectral import *
 
 
-HDR_PATH = './test_data.hdr'
+HDR_PATH = './tests/test_data.hdr'
 
 def test_smile_metric():
     o2_mean, co2_mean, o2_std, co2_std = hyperquest.smile_metric(HDR_PATH)
