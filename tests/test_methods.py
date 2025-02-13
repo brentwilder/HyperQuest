@@ -20,7 +20,7 @@ def test_smile_metric():
 
 
 def test_sub_pixel_shift():
-    x_shift, y_shift = hyperquest.sub_pixel_shift(HDR_PATH)
+    x_shift, y_shift = hyperquest.sub_pixel_shift(HDR_PATH,band_index_vnir=0, band_index_vswir=250)
 
     # output is a float and not nan
     assert isinstance(x_shift, float)
