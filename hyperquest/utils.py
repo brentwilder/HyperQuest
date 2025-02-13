@@ -5,7 +5,7 @@ from dateutil import parser
 from datetime import timezone
 import numpy as np
 from spectral import *
-import cv2
+from skimage.draw import line
 
 def binning(local_mu, local_sigma, nbins):
     '''
@@ -237,39 +237,59 @@ def cross_track_stats(image):
     '''
     TODO
     '''
-    # get rows, cols
-    r, c = image.shape[0], image.shape[1]
 
-    # make a 3d array if not
+    # Make a 3D array if not
     if len(image.shape) == 2:
         image = image[:, :, np.newaxis]
 
-    # get top left adn bottom left in relation to camera
+    if len(image.shape) != 3:
+        raise Exception('Data needs to be a 3D array.')
+
+    # Now i pad the array to ensure our line we make to grab cross track stats does not go out of bounds
+    pad_value = np.nan 
+    PAD = 100  
+    image = np.pad(image,
+                   ((PAD, PAD), 
+                    (PAD, PAD), 
+                    (0, 0)), 
+                    mode='constant', constant_values=pad_value)
+    r, c = image.shape[0], image.shape[1]
+
+    # Get points of interest of valid data so that can manage the angles of the image
+    # all of this trouble is because geo-referenced images are rotated to north
+    # and so this is my sort of solution to this is to assume orthogonal image
+    # which more or less works well for this case..
     top_left = next((x, y) for y in range(r) for x in range(c) if image[y, x, :].sum() > 0)
     bottom_left = next((x, y) for x in range(c) for y in range(r-1, -1, -1) if image[y, x, :].sum() > 0)
+    top_right = next((x, y) for x in range(c-1, -1, -1) for y in range(0, r) if image[y, x, :].sum() > 0)
 
-    # slicing direction going left to right --> 
-    dx, dy = bottom_left[0] - top_left[0], bottom_left[1] - top_left[1]
-    perp_dx, perp_dy = dy / (dx**2 + dy**2)**0.5, -dx / (dx**2 + dy**2)**0.5 
+    # direction cross track
+    dx, dy  = top_right[0] - top_left[0] , top_right[1] - top_left[1]
+    dx, dy = dx / (dx**2 + dy**2)**0.5, dy / (dx**2 + dy**2)**0.5
 
+    # prep for while
     mean_along_line = []
     std_along_line = []
+    i = 0 
+    while top_left[0] + i * dx <= top_right[0]:  
 
-    for i in range(0, c):
-        # ends of linear line to sample along
-        x0, y0 = int(top_left[0] + i * perp_dx), int(top_left[1] + i * perp_dy)
-        x1, y1 = int(bottom_left[0] + i * perp_dx), int(bottom_left[1] + i * perp_dy)
+        # grab firt and last points
+        x0, y0 = int(top_left[0] + i * dx), int(top_left[1] + i * dy)
+        x1, y1 = int(bottom_left[0] + i * dx), int(bottom_left[1] + i * dy)
 
-        # use CV2 to sample
-        mask = np.zeros_like(image[:, :, 0], dtype=np.uint8)
-        cv2.line(mask, (x0, y0), (x1, y1), color=255, thickness=1)
-        data = image[mask > 0, :]
+        # Create line using skiamge and then extract from image
+        rr, cc = line(y0, x0, y1, x1)
+        data = image[rr, cc, :]
 
-        # take mean, similar to taking it along columns , but now with respect to this line
-        mean_data = np.nanmean(data, axis=0) 
+        # Calculate mean and std 
+        # (NOTE assuming that nan have been set for no data in previous step)
+        mean_data = np.nanmean(data, axis=0)
         std_data = np.nanstd(data, axis=0)
+
+        # store and set next i
         mean_along_line.append(mean_data)
         std_along_line.append(std_data)
+        i += 1  
 
     mean_along_line = np.array(mean_along_line)
     std_along_line = np.array(std_along_line)
