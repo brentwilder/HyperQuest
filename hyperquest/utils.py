@@ -3,7 +3,9 @@ import re
 from os.path import abspath, exists
 from dateutil import parser
 from datetime import timezone
-
+import numpy as np
+from spectral import *
+import cv2
 
 def binning(local_mu, local_sigma, nbins):
     '''
@@ -229,3 +231,47 @@ def mask_atmos_windows(value, wavelengths):
     value[mask] = np.nan
     
     return value
+
+
+def cross_track_stats(image):
+    '''
+    TODO
+    '''
+    # get rows, cols
+    r, c = image.shape[0], image.shape[1]
+
+    # make a 3d array if not
+    if len(image.shape) == 2:
+        image = image[:, :, np.newaxis]
+
+    # get top left adn bottom left in relation to camera
+    top_left = next((x, y) for y in range(r) for x in range(c) if image[y, x, :].sum() > 0)
+    bottom_left = next((x, y) for x in range(c) for y in range(r-1, -1, -1) if image[y, x, :].sum() > 0)
+
+    # slicing direction going left to right --> 
+    dx, dy = bottom_left[0] - top_left[0], bottom_left[1] - top_left[1]
+    perp_dx, perp_dy = dy / (dx**2 + dy**2)**0.5, -dx / (dx**2 + dy**2)**0.5 
+
+    mean_along_line = []
+    std_along_line = []
+
+    for i in range(0, c):
+        # ends of linear line to sample along
+        x0, y0 = int(top_left[0] + i * perp_dx), int(top_left[1] + i * perp_dy)
+        x1, y1 = int(bottom_left[0] + i * perp_dx), int(bottom_left[1] + i * perp_dy)
+
+        # use CV2 to sample
+        mask = np.zeros_like(image[:, :, 0], dtype=np.uint8)
+        cv2.line(mask, (x0, y0), (x1, y1), color=255, thickness=1)
+        data = image[mask > 0, :]
+
+        # take mean, similar to taking it along columns , but now with respect to this line
+        mean_data = np.nanmean(data, axis=0) 
+        std_data = np.nanstd(data, axis=0)
+        mean_along_line.append(mean_data)
+        std_along_line.append(std_data)
+
+    mean_along_line = np.array(mean_along_line)
+    std_along_line = np.array(std_along_line)
+
+    return mean_along_line, std_along_line
