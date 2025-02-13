@@ -3,3 +3,6 @@ from .utils import *
 from .mlr import *
 from .smile import *
 from .coregistration import *
+from .libradtran import *
+from .optimization import *
+from .radiative_transfer import *

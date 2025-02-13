@@ -12,7 +12,7 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     '''
     Residual-scaled local standard deviation (Gao et al., 2007)
 
-    Parameters:
+    Parameters: 
         hdr_path (str): Path to the .hdr file.
         block_size (int): Block size for partitioning (for example 5 would be 5x5 pixels).
         nbins (int, optional): Number of bins for histogram analysis. Default is 150.
@@ -22,7 +22,7 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
         mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
 
     Returns:
-        out: either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
+        out: Either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
 
     '''
 

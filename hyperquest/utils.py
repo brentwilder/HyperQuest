@@ -183,9 +183,6 @@ def get_img_path_from_hdr(hdr_path):
     return img_path
 
 
-
-
-
 def linear_to_db(snr_linear):
     '''
     TODO:
