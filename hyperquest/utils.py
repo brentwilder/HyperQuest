@@ -75,7 +75,6 @@ def pad_image(image, block_size):
 def get_blocks(array, block_size):
     '''
     TODO:
-    provides the full array of blocks based on NxN size.
 
     '''
     rows, cols, bands = array.shape
@@ -97,7 +96,7 @@ def get_blocks(array, block_size):
 
 def read_hdr_metadata(hdr_path):
     '''
-    Reads wavelengths, FWHM,  and  acquisition time from  .hdr file.
+    TODO:
 
     '''
 
@@ -148,13 +147,11 @@ def read_hdr_metadata(hdr_path):
 
 
 
-def get_img_path_from_hdr(hdr_path):
+def get_img_path_from_hdr(hdr_path): 
     '''
     TODO:
-    quickly gets actual image path from relative position of .hdr file
 
     '''
-    
     # Ensure the file ends in .hdr
     if not hdr_path.lower().endswith('.hdr'):
         raise ValueError(f'Invalid file format: {hdr_path}. Expected a .hdr file.')
@@ -184,25 +181,20 @@ def get_img_path_from_hdr(hdr_path):
 
 
 def linear_to_db(snr_linear):
-    '''
-    TODO:
-    Convert the SNR to units of dB.
-
-    '''
-
-    snr_db = 10 * np.log10(snr_linear)
-
-    return snr_db
+    return 10 * np.log10(snr_linear)
     
 
 def mask_water_using_ndwi(array, hdr_path, ndwi_threshold=0.25):
     '''
-    TODO:
-    Returns array where NDWI greater than a threshold are set to -9999 (masked out).
+    Returns array where NDWI greater than a threshold are set to NaN.
 
-    Reason behind this is that water typically has very very low signal, and therefore different SNR compared to the image.
+    Parameters: 
+        array (ndarray): 3d array of TOA radiance.
+        hdr_path (str): Path to the .hdr file.
+        ndwi_threshold (float): values above this value are masked.
 
-    It may be a common thing to need to remove water here so this method is called in al of the SNR functions. 
+    Returns:
+        array: 3d array of TOA radiance (with water masked out).
 
     '''
 
@@ -213,27 +205,45 @@ def mask_water_using_ndwi(array, hdr_path, ndwi_threshold=0.25):
     nir = array[:, :, nir_index] 
     ndwi = (green - nir) / (green + nir)
 
-    array[(ndwi > ndwi_threshold)] = -9999
+    array[(ndwi > ndwi_threshold)] = np.nan
 
     return array
 
 
-def mask_atmos_windows(value, wavelengths):
+def mask_atmos_windows(spectra, wavelengths):
     '''
-    TODO
+    Given spectra and wavelengths in nanometers, mask out noisy bands.
+
+    Parameters: 
+        spectra (ndarray): 1d array of TOA radiance data.
+        wavelengths (ndarray): 1d array of sensor center wavelengths
+
+    Returns:
+        spectra: TOA radiance data but with noisy atmospheric bands masked out
     '''
     
     mask = ((wavelengths >= 1250) & (wavelengths <= 1450)) | ((wavelengths >= 1780) & (wavelengths <= 1950))
 
-    value[mask] = np.nan
+    spectra[mask] = np.nan
     
-    return value
+    return spectra
 
 
-def cross_track_stats(image):
+def cross_track_stats(image, no_data_value=-9999):
     '''
-    TODO
+    Scans image line-by-line as the imager would and produces one row of average and std dev. To do this it assumes image is perfectly orthogonal.
+    This function is helpful to reduce an image to 1 row for assessment but the image is rotated because of georectification.  
+
+    Parameters: 
+        image (ndarray): either a 2d or 3d array.
+        no_data_value (int or float): Value used to describe no data regions.
+
+    Returns:
+        mean_along_line, std_along_line: mean and standard deviation of values for each band in a 1d numpy array. 
     '''
+
+    # Mask no data values
+    image[image <= no_data_value] = np.nan
 
     # Make a 3D array if not
     if len(image.shape) == 2:
@@ -279,7 +289,6 @@ def cross_track_stats(image):
         data = image[rr, cc, :]
 
         # Calculate mean and std 
-        # (NOTE assuming that nan have been set for no data in previous step)
         mean_data = np.nanmean(data, axis=0)
         std_data = np.nanstd(data, axis=0)
 

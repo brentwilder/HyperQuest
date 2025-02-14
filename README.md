@@ -8,8 +8,11 @@
 
 `hyperquest`: A Python package for estimating image-wide quality estimation metrics of hyperspectral imaging (imaging spectroscopy). Computations are sped up and scale with number of cpus.
 
-Important: this package assumes your hyperspectral data is in ENVI format with a .HDR file.
-
+__Important: this package assumes the following about input hyperspectral data:__ 
+- Radiance (if using radiative transfer model must be in microW/cm2/nm/sr (for now))
+- ENVI format with a .HDR file
+- Pushbroom imaging spectrometer, such as:
+    - AVIRIS-Classic, AVIRIS-NG, AVIRIS-3, DESIS, EnMAP, EMIT, GaoFen-5, HISUI, Hyperion, HySIS, PRISMA, Tanager
 
 
 ## Installation Instructions

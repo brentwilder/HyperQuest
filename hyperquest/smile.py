@@ -7,20 +7,23 @@ from .utils import *
 from .optimization import *
 
 
-
 def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
     '''
-    TODO
+    This is an exact remake of the MATLAB method smileMetric(), https://www.mathworks.com/help/images/ref/smilemetric.html.
 
-    dBand = (Band1 - Band2) / mean(FWHM from Band1 and Band2)
+    This is based from the work presented in Dadon et al. (2010),
 
-    Band1 is absorption band (either CO2 or O2)
-    Band2 is the following band
-    dBand is the computed derivative along the column.
+    Dadon, A., Ben-Dor, E., & Karnieli, A. (2010). Use of derivative calculations and minimum noise
+    fraction transformfor detecting and correcting the spectral curvature effect (smile) in Hyperion images. 
+    IEEE Transactions on Geoscience and Remote Sensing, 48(6), 2603-2612.
 
+    Parameters: 
+        hdr_path (str): Path to the .hdr file.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        no_data_value (int or float): Value used to describe no data regions.
 
-    computes the column mean derivatives, and their standard deviations, for the O2 and CO2 absorption features 
-
+    Returns:
+        o2_mean, co2_mean, o2_std, co2_std: 1d array of cross-track mean do2, mean dco2, std do2, std dco2
 
     '''
 
@@ -62,7 +65,7 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
     o2_dband = (o2_b1 + o2_b2) / fwhm_bar_o2
 
     # Compute cross-track (columnwise) means and standard deviation (w/respect to camera)
-    o2_mean, o2_std = cross_track_stats(o2_dband)
+    o2_mean, o2_std = cross_track_stats(o2_dband, no_data_value=no_data_value)
     o2_mean = o2_mean.flatten()
     o2_std = o2_std.flatten()
 
@@ -72,7 +75,7 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
         co2_b2 = array[:, :, co2_index+1]
         fwhm_bar_co2 = np.nanmean([fwhm[co2_index], fwhm[co2_index+1]])
         co2_dband = (co2_b1 + co2_b2) / fwhm_bar_co2
-        co2_mean, co2_std = cross_track_stats(co2_dband)
+        co2_mean, co2_std = cross_track_stats(co2_dband, no_data_value=no_data_value)
         co2_mean = co2_mean.flatten()
         co2_std = co2_std.flatten()
 
@@ -81,7 +84,38 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
 
 def nodd_o2a(hdr_path, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_waterbodies=True, no_data_value=-9999):
     '''
-    TODO
+    Similar to method in Felde et al. (2003) to solve for nm shift at O2-A across-track. Requires radiative transfer model run.
+
+    NODD stands for Normalized Optical Depth Derivative, and was introduced in Felde et al. (2003). It is a method that is largely insensitive to
+    surface reflectance and the molecular column density. The actual equations for NODD are present in nodd_sse_min() in the optimization file, and are copied here for reference.
+
+    # gradient of negative natural log (gets at transmittance)
+    dtau_obs = np.gradient(-np.log(l), w_sensor)
+    dtau_model = np.gradient(-np.log(l_toa_model), w_sensor)
+
+    # offset mean
+    dtau_obs -= np.mean(dtau_obs)
+    dtau_model -= np.mean(dtau_model)
+
+    # normalize by RMS
+    nodd_obs = dtau_obs / np.sqrt(np.mean(dtau_obs**2))
+    nodd_model = dtau_model / np.sqrt(np.mean(dtau_model**2))
+
+    # compute residual and SSE
+    residual =  nodd_model - nodd_obs
+    sse = np.sum(residual**2)
+
+    
+    Parameters: 
+        hdr_path (str): Path to the .hdr file.
+        path_to_rtm_output_csv (str): Path to output from radiative transfer.
+        ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
+        rho_s (float): value from 0-1. As stated, this does not influence nodd method very much and 0.15 is common in literature.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        no_data_value (int or float): Value used to describe no data regions.
+
+    Returns:
+        cwl_opt, fwhm_opt, sensor_band_near_760, fwhm_near_760: 1d array of cross-track CWL, 1d array of cross-track FWHM, band near 760, fwhm near 760
 
     '''
     
@@ -97,7 +131,7 @@ def nodd_o2a(hdr_path, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_waterbod
     array[array <= no_data_value] = np.nan
 
     # Average in down-track direction (reduce to 1 row)
-    array,_ = cross_track_stats(array)
+    array,_ = cross_track_stats(array, no_data_value=no_data_value)
 
     # Get data from hdr
     w_sensor, fwhm, obs_time = read_hdr_metadata(hdr_path)
