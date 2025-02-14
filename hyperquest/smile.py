@@ -7,7 +7,7 @@ from .utils import *
 from .optimization import *
 
 
-def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
+def smile_metric(hdr_path, rotate, mask_waterbodies=True):
     '''
     This is an exact remake of the MATLAB method smileMetric(), https://www.mathworks.com/help/images/ref/smilemetric.html.
 
@@ -19,8 +19,8 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
 
     Parameters: 
         hdr_path (str): Path to the .hdr file.
+        rotate (int): rotate counter clockwise, either 90, 180, or 270.
         mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
-        no_data_value (int or float): Value used to describe no data regions.
 
     Returns:
         o2_mean, co2_mean, o2_std, co2_std: 1d array of cross-track mean do2, mean dco2, std do2, std dco2
@@ -31,12 +31,27 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
     img_path = get_img_path_from_hdr(hdr_path)
     array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
 
+    # ensure this is the raw data and has not been georeferenced.
+    if (array[:,:,0]<0).sum() > 0:
+        raise Exception('Please provide data that has not been geo-referenced.')
+
+    # ensure data is 3d
+    if len(array.shape) != 3:
+        raise Exception('Data needs to be a 3D array.')
+    
+    # Perform rotation if needed
+    if rotate != 0 and rotate != 90 and rotate != 180 and rotate != 270:
+        raise ValueError('rotate must be 90, 180, or 270.')
+    if rotate>=90:
+        array = np.rot90(array, axes=(0,1))
+        if rotate>=180:
+            array = np.rot90(array, axes=(0,1))
+            if rotate>=270:
+                array = np.rot90(array, axes=(0,1))
+
     # mask waterbodies
     if mask_waterbodies is True:
         array = mask_water_using_ndwi(array, hdr_path)
-
-    # Mask no data values
-    array[array <= no_data_value] = np.nan
   
     # get wavelengths
     w, fwhm, obs_time = read_hdr_metadata(hdr_path)
@@ -65,7 +80,8 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
     o2_dband = (o2_b1 + o2_b2) / fwhm_bar_o2
 
     # Compute cross-track (columnwise) means and standard deviation (w/respect to camera)
-    o2_mean, o2_std = cross_track_stats(o2_dband, no_data_value=no_data_value)
+    o2_mean = np.nanmean(o2_dband, axis=0)
+    o2_std = np.nanmean(o2_dband, axis=0)
     o2_mean = o2_mean.flatten()
     o2_std = o2_std.flatten()
 
@@ -75,14 +91,15 @@ def smile_metric(hdr_path, mask_waterbodies=True, no_data_value=-9999):
         co2_b2 = array[:, :, co2_index+1]
         fwhm_bar_co2 = np.nanmean([fwhm[co2_index], fwhm[co2_index+1]])
         co2_dband = (co2_b1 + co2_b2) / fwhm_bar_co2
-        co2_mean, co2_std = cross_track_stats(co2_dband, no_data_value=no_data_value)
+        co2_mean = np.nanmean(co2_dband, axis=0)
+        co2_std = np.nanmean(co2_dband, axis=0)
         co2_mean = co2_mean.flatten()
         co2_std = co2_std.flatten()
 
     return o2_mean, co2_mean, o2_std, co2_std
 
 
-def nodd_o2a(hdr_path, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_waterbodies=True, no_data_value=-9999):
+def nodd_o2a(hdr_path, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_waterbodies=True):
     '''
     Similar to method in Felde et al. (2003) to solve for nm shift at O2-A across-track. Requires radiative transfer model run.
 
@@ -108,11 +125,11 @@ def nodd_o2a(hdr_path, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_waterbod
     
     Parameters: 
         hdr_path (str): Path to the .hdr file.
+        rotate (int): rotate counter clockwise, either 90, 180, or 270.
         path_to_rtm_output_csv (str): Path to output from radiative transfer.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
         rho_s (float): value from 0-1. As stated, this does not influence nodd method very much and 0.15 is common in literature.
         mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
-        no_data_value (int or float): Value used to describe no data regions.
 
     Returns:
         cwl_opt, fwhm_opt, sensor_band_near_760, fwhm_near_760: 1d array of cross-track CWL, 1d array of cross-track FWHM, band near 760, fwhm near 760
@@ -123,15 +140,26 @@ def nodd_o2a(hdr_path, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_waterbod
     img_path = get_img_path_from_hdr(hdr_path)
     array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
 
-    # mask waterbodies
-    if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, hdr_path)
+    # ensure this is the raw data and has not been georeferenced.
+    if (array[:,:,0]<0).sum() > 0:
+        raise Exception('Please provide data that has not been geo-referenced.')
 
-    # Mask no data values
-    array[array <= no_data_value] = np.nan
+    # ensure data is 3d
+    if len(array.shape) != 3:
+        raise Exception('Data needs to be a 3D array.')
+    
+    # Perform rotation if needed
+    if rotate != 0 and rotate != 90 and rotate != 180 and rotate != 270:
+        raise ValueError('rotate must be 90, 180, or 270.')
+    if rotate>=90:
+        array = np.rot90(array, axes=(0,1))
+        if rotate>=180:
+            array = np.rot90(array, axes=(0,1))
+            if rotate>=270:
+                array = np.rot90(array, axes=(0,1))
 
     # Average in down-track direction (reduce to 1 row)
-    array,_ = cross_track_stats(array, no_data_value=no_data_value)
+    array = np.nanmean(array, axis=0)
 
     # Get data from hdr
     w_sensor, fwhm, obs_time = read_hdr_metadata(hdr_path)
