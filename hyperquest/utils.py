@@ -75,7 +75,6 @@ def pad_image(image, block_size):
 def get_blocks(array, block_size):
     '''
     TODO:
-    provides the full array of blocks based on NxN size.
 
     '''
     rows, cols, bands = array.shape
@@ -97,7 +96,7 @@ def get_blocks(array, block_size):
 
 def read_hdr_metadata(hdr_path):
     '''
-    Reads wavelengths, FWHM,  and  acquisition time from  .hdr file.
+    TODO:
 
     '''
 
@@ -112,6 +111,7 @@ def read_hdr_metadata(hdr_path):
     wavelength = None
     fwhm = None
     start_time = None
+    obs_time = None
 
     # Read the .hdr file and extract data
     for line in open(hdr_path, 'r'):
@@ -148,13 +148,11 @@ def read_hdr_metadata(hdr_path):
 
 
 
-def get_img_path_from_hdr(hdr_path):
+def get_img_path_from_hdr(hdr_path): 
     '''
     TODO:
-    quickly gets actual image path from relative position of .hdr file
 
     '''
-    
     # Ensure the file ends in .hdr
     if not hdr_path.lower().endswith('.hdr'):
         raise ValueError(f'Invalid file format: {hdr_path}. Expected a .hdr file.')
@@ -184,25 +182,20 @@ def get_img_path_from_hdr(hdr_path):
 
 
 def linear_to_db(snr_linear):
-    '''
-    TODO:
-    Convert the SNR to units of dB.
-
-    '''
-
-    snr_db = 10 * np.log10(snr_linear)
-
-    return snr_db
+    return 10 * np.log10(snr_linear)
     
 
 def mask_water_using_ndwi(array, hdr_path, ndwi_threshold=0.25):
     '''
-    TODO:
-    Returns array where NDWI greater than a threshold are set to -9999 (masked out).
+    Returns array where NDWI greater than a threshold are set to NaN.
 
-    Reason behind this is that water typically has very very low signal, and therefore different SNR compared to the image.
+    Parameters: 
+        array (ndarray): 3d array of TOA radiance.
+        hdr_path (str): Path to the .hdr file.
+        ndwi_threshold (float): values above this value are masked.
 
-    It may be a common thing to need to remove water here so this method is called in al of the SNR functions. 
+    Returns:
+        array: 3d array of TOA radiance (with water masked out).
 
     '''
 
@@ -213,82 +206,25 @@ def mask_water_using_ndwi(array, hdr_path, ndwi_threshold=0.25):
     nir = array[:, :, nir_index] 
     ndwi = (green - nir) / (green + nir)
 
-    array[(ndwi > ndwi_threshold)] = -9999
+    array[(ndwi > ndwi_threshold)] = np.nan
 
     return array
 
 
-def mask_atmos_windows(value, wavelengths):
+def mask_atmos_windows(spectra, wavelengths):
     '''
-    TODO
+    Given spectra and wavelengths in nanometers, mask out noisy bands.
+
+    Parameters: 
+        spectra (ndarray): 1d array of TOA radiance data.
+        wavelengths (ndarray): 1d array of sensor center wavelengths
+
+    Returns:
+        spectra: TOA radiance data but with noisy atmospheric bands masked out
     '''
     
     mask = ((wavelengths >= 1250) & (wavelengths <= 1450)) | ((wavelengths >= 1780) & (wavelengths <= 1950))
 
-    value[mask] = np.nan
+    spectra[mask] = np.nan
     
-    return value
-
-
-def cross_track_stats(image):
-    '''
-    TODO
-    '''
-
-    # Make a 3D array if not
-    if len(image.shape) == 2:
-        image = image[:, :, np.newaxis]
-
-    if len(image.shape) != 3:
-        raise Exception('Data needs to be a 3D array.')
-
-    # Now i pad the array to ensure our line we make to grab cross track stats does not go out of bounds
-    pad_value = np.nan 
-    PAD = 100  
-    image = np.pad(image,
-                   ((PAD, PAD), 
-                    (PAD, PAD), 
-                    (0, 0)), 
-                    mode='constant', constant_values=pad_value)
-    r, c = image.shape[0], image.shape[1]
-
-    # Get points of interest of valid data so that can manage the angles of the image
-    # all of this trouble is because geo-referenced images are rotated to north
-    # and so this is my sort of solution to this is to assume orthogonal image
-    # which more or less works well for this case..
-    top_left = next((x, y) for y in range(r) for x in range(c) if image[y, x, :].sum() > 0)
-    bottom_left = next((x, y) for x in range(c) for y in range(r-1, -1, -1) if image[y, x, :].sum() > 0)
-    top_right = next((x, y) for x in range(c-1, -1, -1) for y in range(0, r) if image[y, x, :].sum() > 0)
-
-    # direction cross track
-    dx, dy  = top_right[0] - top_left[0] , top_right[1] - top_left[1]
-    dx, dy = dx / (dx**2 + dy**2)**0.5, dy / (dx**2 + dy**2)**0.5
-
-    # prep for while
-    mean_along_line = []
-    std_along_line = []
-    i = 0 
-    while top_left[0] + i * dx <= top_right[0]:  
-
-        # grab firt and last points
-        x0, y0 = int(top_left[0] + i * dx), int(top_left[1] + i * dy)
-        x1, y1 = int(bottom_left[0] + i * dx), int(bottom_left[1] + i * dy)
-
-        # Create line using skiamge and then extract from image
-        rr, cc = line(y0, x0, y1, x1)
-        data = image[rr, cc, :]
-
-        # Calculate mean and std 
-        # (NOTE assuming that nan have been set for no data in previous step)
-        mean_data = np.nanmean(data, axis=0)
-        std_data = np.nanstd(data, axis=0)
-
-        # store and set next i
-        mean_along_line.append(mean_data)
-        std_along_line.append(std_data)
-        i += 1  
-
-    mean_along_line = np.array(mean_along_line)
-    std_along_line = np.array(std_along_line)
-
-    return mean_along_line, std_along_line
+    return spectra

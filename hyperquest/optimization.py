@@ -2,7 +2,7 @@ import numpy as np
 from scipy import optimize
 
 
-def nodd_sse_min(x0, rtm_radiance, rtm_wave,w_sensor,fwhm, l_toa_observed):
+def nodd_sse_min(x0,l_toa_rtm, w_rtm, w_sensor,fwhm,l):
     '''
     Define the objective function.
     
@@ -15,11 +15,11 @@ def nodd_sse_min(x0, rtm_radiance, rtm_wave,w_sensor,fwhm, l_toa_observed):
 
     # Apply new model data with SRF
     sigma = new_fhwm / (2* np.sqrt(2*np.log(2)))
-    srf = np.exp(-1 * ( ((rtm_wave - new_cwl[:, None])**2) / (2 * sigma[:, None]**2)))
-    l_toa_model = np.trapz(rtm_radiance * srf, dx=1) / np.trapz(srf, dx=1) 
+    srf = np.exp(-1 * ( ((w_rtm - new_cwl[:, None])**2) / (2 * sigma[:, None]**2)))
+    l_toa_model = np.trapz(l_toa_rtm * srf, dx=1) / np.trapz(srf, dx=1) 
 
     # NODD method below
-    dtau_obs = np.gradient(-np.log(l_toa_observed), w_sensor)
+    dtau_obs = np.gradient(-np.log(l), w_sensor)
     dtau_model = np.gradient(-np.log(l_toa_model), w_sensor)
     #offset mean
     dtau_obs -= np.mean(dtau_obs)
@@ -35,17 +35,17 @@ def nodd_sse_min(x0, rtm_radiance, rtm_wave,w_sensor,fwhm, l_toa_observed):
     return sse
 
 
-def invert_cwl_and_fwhm(x0, l_toa_observed, rtm_radiance, rtm_wave, w_sensor, fwhm):
+def invert_cwl_and_fwhm(x0, l, l_toa_rtm, w_rtm, w_sensor, fwhm):
     '''
     invert for CWL and FWHM
-    '''
+    ''' 
 
-    if np.isnan(l_toa_observed).all():
+    if np.isnan(l).all():
         return (np.nan, np.nan)
 
     # run nonlinear optimizer (constrained)
     opt_result = optimize.minimize(nodd_sse_min, x0,
-                                   args=(rtm_radiance,rtm_wave, w_sensor,fwhm,l_toa_observed),
+                                   args=(l_toa_rtm,w_rtm, w_sensor,fwhm,l),
                                    method='Nelder-Mead'
                                    )
     

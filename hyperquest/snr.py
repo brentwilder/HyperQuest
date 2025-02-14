@@ -8,7 +8,7 @@ from .utils import *
 from .mlr import *
 
 
-def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True):
+def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Residual-scaled local standard deviation (Gao et al., 2007)
 
@@ -20,6 +20,7 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
         output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
         snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
         mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        no_data_value (int or float): Value used to describe no data regions.
 
     Returns:
         out: Either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
@@ -34,6 +35,9 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     if mask_waterbodies is True:
         array = mask_water_using_ndwi(array, hdr_path)
     
+    # Mask no data values
+    array[array <= no_data_value] = np.nan
+
     # Pad image to ensure divisibility by block_size
     array = pad_image(array, block_size)
 
@@ -77,7 +81,7 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     return out
 
 
-def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True):
+def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Spectral and spatial de-correlation (Roger & Arnold, 1996)
 
@@ -89,6 +93,7 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
         output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
         snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
         mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        no_data_value (int or float): Value used to describe no data regions.
 
     Returns:
         out: either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
@@ -102,6 +107,9 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     # mask waterbodies
     if mask_waterbodies is True:
         array = mask_water_using_ndwi(array, hdr_path)
+
+    # Mask no data values
+    array[array <= no_data_value] = np.nan
 
     # Pad image to ensure divisibility by block_size
     array = pad_image(array, block_size)
@@ -146,9 +154,8 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     return out
 
 
-def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
-           include_neighbor_pixel_in_mlr=True, output_all=False, 
-           snr_in_db=False, mask_waterbodies=True):
+def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, include_neighbor_pixel_in_mlr=True,
+           output_all=False, snr_in_db=False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
 
@@ -162,6 +169,7 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
         output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
         snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
         mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        no_data_value (int or float): Value used to describe no data regions.
 
     Returns:
         out: either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
@@ -176,6 +184,9 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1,
     # mask waterbodies
     if mask_waterbodies is True:
         array = mask_water_using_ndwi(array, hdr_path)
+
+    # Mask no data values
+    array[array <= no_data_value] = np.nan
 
     # Apply PCA 
     pca = PCA(n_components=n_pca)

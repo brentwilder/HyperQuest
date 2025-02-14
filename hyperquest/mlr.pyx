@@ -12,8 +12,8 @@ def mlr_spectral(np.ndarray[np.float64_t, ndim=2] block):
     TODO
     '''
 
-    # remove data that is NaN (keep only positive values)
-    block = block[block[:, 0] > -99]
+    # remove data that is NaN
+    block = block[~np.isnan(block[:, 0])]
 
     cdef int rows = block.shape[0]
     cdef int cols = block.shape[1]
@@ -50,8 +50,8 @@ def mlr_spectral_spatial(np.ndarray[np.float64_t, ndim=2] block):
     TODO
     '''
 
-    # remove data that is NaN (keep only positive values)
-    block = block[block[:, 0] > -99]
+    # remove data that is NaN
+    block = block[~np.isnan(block[:, 0])]
 
     cdef int rows = block.shape[0]
     cdef int cols = block.shape[1]
