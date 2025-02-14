@@ -42,7 +42,9 @@ pip install hyperquest
 - see [SNR example](tutorials/example_using_EMIT.ipynb) where different SNR methods are computed over Libya-4.
 - see [Smile example ](tutorials/testing_smile_methods.ipynb) where different smile methods are computed over Libya-4.
 
-
+## libRadtran install instructions
+- Can be installed on Unix type system using the following link:
+    - http://www.libradtran.org/doku.php?id=download
 
 
 ## References:
