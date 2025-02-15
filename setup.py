@@ -34,7 +34,7 @@ setup(
         "cython>=3.0.11",
         "spectral>=0.23.0",
         "pysolar>=0.13",
-        "h5netcdf>=1.5.0"
+        "h5netcdf>=1.1.0"
         ],
     classifiers=[
         "Programming Language :: Python :: 3",
