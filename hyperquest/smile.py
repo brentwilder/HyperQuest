@@ -7,7 +7,7 @@ from .utils import *
 from .optimization import *
 
 
-def smile_metric(hdr_path, rotate, mask_waterbodies=True):
+def smile_metric(path_to_data, rotate, mask_waterbodies=True):
     '''
     This is an exact remake of the MATLAB method smileMetric(), https://www.mathworks.com/help/images/ref/smilemetric.html.
 
@@ -18,7 +18,7 @@ def smile_metric(hdr_path, rotate, mask_waterbodies=True):
     IEEE Transactions on Geoscience and Remote Sensing, 48(6), 2603-2612.
 
     Parameters: 
-        hdr_path (str): Path to the .hdr file.
+        path_to_data (str): Path to the .hdr or .nc
         rotate (int): rotate counter clockwise, either 0, 90, 180, or 270.
         mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
 
@@ -27,9 +27,16 @@ def smile_metric(hdr_path, rotate, mask_waterbodies=True):
 
     '''
 
-    # Load raster
-    img_path = get_img_path_from_hdr(hdr_path)
-    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
+    # Identify data type
+    if path_to_data.lower().endswith('.nc'):
+        array, fwhm, w, obs_time = retrieve_data_from_nc(path_to_data)
+    else:
+        # Load raster
+        img_path = get_img_path_from_hdr(path_to_data)
+        array = np.array(envi.open(path_to_data, img_path).load(), dtype=np.float64)
+        
+        # get wavelengths
+        w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # ensure this is the raw data and has not been georeferenced.
     if (array[:,:,0]<0).sum() > 0:
@@ -43,19 +50,16 @@ def smile_metric(hdr_path, rotate, mask_waterbodies=True):
     if rotate != 0 and rotate != 90 and rotate != 180 and rotate != 270:
         raise ValueError('rotate must be 90, 180, or 270.')
     if rotate>=90:
-        array = np.rot90(array, axes=(0,1))
-        if rotate>=180:
-            array = np.rot90(array, axes=(0,1))
-            if rotate>=270:
-                array = np.rot90(array, axes=(0,1))
+        array = np.rot90(array, axes=(0,1), k=1)
+    elif rotate>=180:
+        array = np.rot90(array, axes=(0,1), k=2)
+    elif rotate>=270:
+        array = np.rot90(array, axes=(0,1), k=3)
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, hdr_path)
+        array = mask_water_using_ndwi(array, w)
   
-    # get wavelengths
-    w, fwhm, obs_time = read_hdr_metadata(hdr_path)
-
     # set up outputs
     co2_mean = np.full(array.shape[1], fill_value=np.nan)
     co2_std = np.full(array.shape[1], fill_value=np.nan)
@@ -99,7 +103,7 @@ def smile_metric(hdr_path, rotate, mask_waterbodies=True):
     return o2_mean, co2_mean, o2_std, co2_std
 
 
-def nodd_o2a(hdr_path, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_waterbodies=True):
+def nodd_o2a(path_to_data, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_waterbodies=True):
     '''
     Similar to method in Felde et al. (2003) to solve for nm shift at O2-A across-track. Requires radiative transfer model run.
 
@@ -124,7 +128,7 @@ def nodd_o2a(hdr_path, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_
 
     
     Parameters: 
-        hdr_path (str): Path to the .hdr file.
+        path_to_data (str): Path to the .hdr or .nc
         rotate (int): rotate counter clockwise, either 0, 90, 180, or 270.
         path_to_rtm_output_csv (str): Path to output from radiative transfer.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
@@ -136,9 +140,16 @@ def nodd_o2a(hdr_path, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_
 
     '''
     
-    # Load raster
-    img_path = get_img_path_from_hdr(hdr_path)
-    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
+    # Identify data type
+    if path_to_data.lower().endswith('.nc'):
+        array, fwhm, w_sensor, obs_time = retrieve_data_from_nc(path_to_data)
+    else:
+        # Load raster
+        img_path = get_img_path_from_hdr(path_to_data)
+        array = np.array(envi.open(path_to_data, img_path).load(), dtype=np.float64)
+        
+        # get wavelengths
+        w_sensor, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # ensure this is the raw data and has not been georeferenced.
     if (array[:,:,0]<0).sum() > 0:
@@ -152,17 +163,18 @@ def nodd_o2a(hdr_path, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, mask_
     if rotate != 0 and rotate != 90 and rotate != 180 and rotate != 270:
         raise ValueError('rotate must be 90, 180, or 270.')
     if rotate>=90:
-        array = np.rot90(array, axes=(0,1))
-        if rotate>=180:
-            array = np.rot90(array, axes=(0,1))
-            if rotate>=270:
-                array = np.rot90(array, axes=(0,1))
+        array = np.rot90(array, axes=(0,1), k=1)
+    elif rotate>=180:
+        array = np.rot90(array, axes=(0,1), k=2)
+    elif rotate>=270:
+        array = np.rot90(array, axes=(0,1), k=3)
+
+    # mask waterbodies
+    if mask_waterbodies is True:
+        array = mask_water_using_ndwi(array, w_sensor)
 
     # Average in down-track direction (reduce to 1 row)
     array = np.nanmean(array, axis=0)
-
-    # Get data from hdr
-    w_sensor, fwhm, obs_time = read_hdr_metadata(hdr_path)
 
     # Only include window for o2-a
     window = (w_sensor >= 730) & (w_sensor <= 790)

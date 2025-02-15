@@ -10,7 +10,7 @@
 
 __Important: this package assumes the following about input hyperspectral data:__ 
 - Radiance (if using radiative transfer model must be in microW/cm2/nm/sr (for now))
-- ENVI format with a .HDR file
+- Data must be in NetCDF (.nc) or ENVI (.hdr)
 - Pushbroom imaging spectrometer, such as:
     - AVIRIS-Classic, AVIRIS-NG, AVIRIS-3, DESIS, EnMAP, EMIT, GaoFen-5, HISUI, Hyperion EO-1, HySIS, PRISMA, SEBASS, Tanager
 - For smile estimation you must use data that has not been georeferenced.
@@ -39,7 +39,7 @@ pip install hyperquest
 
 ## Usage example
 
-- see [SNR example](tutorials/example_using_EMIT.ipynb) where different SNR methods are computed over Libya-4.
+- see [SNR example](tutorials/example_using_EMIT.ipynb) and  [Smile example](tutorials/testing_smile_methods.ipynb) which has different methods computed over Libya-4.
 
 ## libRadtran install instructions
 - Can be installed on Unix type system using the following link:

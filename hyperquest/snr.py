@@ -8,12 +8,12 @@ from .utils import *
 from .mlr import *
 
 
-def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
+def rlsd(path_to_data, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Residual-scaled local standard deviation (Gao et al., 2007)
 
     Parameters: 
-        hdr_path (str): Path to the .hdr file.
+        path_to_data (str): Path to the .hdr or .nc
         block_size (int): Block size for partitioning (for example 5 would be 5x5 pixels).
         nbins (int, optional): Number of bins for histogram analysis. Default is 150.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
@@ -27,14 +27,21 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     '''
 
-    # Load raster
-    img_path = get_img_path_from_hdr(hdr_path)
-    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
+    # Identify data type
+    if path_to_data.lower().endswith('.nc'):
+        array, fwhm, w, obs_time = retrieve_data_from_nc(path_to_data)
+    else:
+        # Load raster
+        img_path = get_img_path_from_hdr(path_to_data)
+        array = np.array(envi.open(path_to_data, img_path).load(), dtype=np.float64)
+        
+        # get wavelengths
+        w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, hdr_path)
-    
+        array = mask_water_using_ndwi(array, w)
+
     # Mask no data values
     array[array <= no_data_value] = np.nan
 
@@ -62,7 +69,6 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     mu, sigma = binning(local_mu, local_sigma, nbins)
 
     # remove atmos windows
-    w, fwhm, obs_time = read_hdr_metadata(hdr_path)
     mu = mask_atmos_windows(mu, w)
     sigma = mask_atmos_windows(sigma, w)
 
@@ -81,12 +87,12 @@ def rlsd(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     return out
 
 
-def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
+def ssdc(path_to_data, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Spectral and spatial de-correlation (Roger & Arnold, 1996)
 
     Parameters:
-        hdr_path (str): Path to the .hdr file.
+        path_to_data (str): Path to the .hdr or .nc
         block_size (int): Block size for partitioning (for example 5 would be 5x5 pixels).
         nbins (int, optional): Number of bins for histogram analysis. Default is 150.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
@@ -100,13 +106,20 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
 
     '''
 
-    # Load raster
-    img_path = get_img_path_from_hdr(hdr_path)
-    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
+    # Identify data type
+    if path_to_data.lower().endswith('.nc'):
+        array, fwhm, w, obs_time = retrieve_data_from_nc(path_to_data)
+    else:
+        # Load raster
+        img_path = get_img_path_from_hdr(path_to_data)
+        array = np.array(envi.open(path_to_data, img_path).load(), dtype=np.float64)
+        
+        # get wavelengths
+        w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, hdr_path)
+        array = mask_water_using_ndwi(array, w)
 
     # Mask no data values
     array[array <= no_data_value] = np.nan
@@ -135,7 +148,6 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     mu, sigma = binning(local_mu, local_sigma, nbins)
 
     # remove atmos windows
-    w, fwhm, obs_time = read_hdr_metadata(hdr_path)
     mu = mask_atmos_windows(mu, w)
     sigma = mask_atmos_windows(sigma, w)
 
@@ -154,13 +166,13 @@ def ssdc(hdr_path, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db =
     return out
 
 
-def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, include_neighbor_pixel_in_mlr=True,
+def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, include_neighbor_pixel_in_mlr=True,
            output_all=False, snr_in_db=False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
 
     Parameters:
-        hdr_path (str): Path to the .hdr file.
+        path_to_data (str): Path to the .hdr or .nc
         n_segments (int):  The (approximate) number of labels in the segmented output image. see skimage.segmentation.slic for more.
         compactness (float):Balances color proximity and space proximity. Higher values give more weight to space proximity, making superpixel shapes more square/cubic.see skimage.segmentation.slic for more.
         n_pca (int): Number of PCAs to compute and provide to SLIC segmentation.
@@ -176,14 +188,20 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, include_
 
     '''
 
-
-    # Load raster
-    img_path = get_img_path_from_hdr(hdr_path)
-    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
+    # Identify data type
+    if path_to_data.lower().endswith('.nc'):
+        array, fwhm, w, obs_time = retrieve_data_from_nc(path_to_data)
+    else:
+        # Load raster
+        img_path = get_img_path_from_hdr(path_to_data)
+        array = np.array(envi.open(path_to_data, img_path).load(), dtype=np.float64)
+        
+        # get wavelengths
+        w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, hdr_path)
+        array = mask_water_using_ndwi(array, w)
 
     # Mask no data values
     array[array <= no_data_value] = np.nan
@@ -236,7 +254,6 @@ def hrdsdc(hdr_path, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, include_
     sigma = np.concatenate(([np.nan], sigma_valid, [np.nan]))
 
     # remove atmos windows
-    w, fwhm, obs_time = read_hdr_metadata(hdr_path)
     mu = mask_atmos_windows(mu, w)
     sigma = mask_atmos_windows(sigma, w)
 

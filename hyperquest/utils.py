@@ -2,10 +2,10 @@ import numpy as np
 import re
 from os.path import abspath, exists
 from dateutil import parser
-from datetime import timezone
+from datetime import timezone, datetime
 import numpy as np
 from spectral import *
-from skimage.draw import line
+import h5netcdf
 
 def binning(local_mu, local_sigma, nbins):
     '''
@@ -66,7 +66,7 @@ def pad_image(image, block_size):
     pad_rows = (block_size - (rows % block_size)) % block_size
     pad_cols = (block_size - (cols % block_size)) % block_size
 
-    padded_image = np.full((rows + pad_rows, cols + pad_cols, bands), -9999, dtype=np.float64)
+    padded_image = np.full((rows + pad_rows, cols + pad_cols, bands), np.nan, dtype=np.float64)
     padded_image[:rows, :cols, :] = image  
 
     return padded_image
@@ -181,11 +181,34 @@ def get_img_path_from_hdr(hdr_path):
     return img_path
 
 
+def retrieve_data_from_nc(path_to_data):
+    '''
+    TODO:
+
+    NOTE: keys are specific to sensor. right now, only EMIT uses NetCDF format that I know.. and the key is "radiance".
+    '''
+
+    # get absolute path 
+    path_to_data = abspath(path_to_data)
+
+    # read using h5netcdf
+    ds = h5netcdf.File(path_to_data, mode='r')
+
+    # get radiance and fhwm and wavelength
+    array = np.array(ds['radiance'], dtype=np.float64)
+    fwhm = np.array(ds['sensor_band_parameters']['fwhm'][:].data.tolist(), dtype=np.float64)
+    wave = np.array(ds['sensor_band_parameters']['wavelengths'][:].data.tolist(), dtype=np.float64)
+
+    obs_time = datetime.strptime(ds.attrs['time_coverage_start'], '%Y-%m-%dT%H:%M:%S+0000')
+
+    return array, fwhm, wave, obs_time
+
+
 def linear_to_db(snr_linear):
     return 10 * np.log10(snr_linear)
     
 
-def mask_water_using_ndwi(array, hdr_path, ndwi_threshold=0.25):
+def mask_water_using_ndwi(array, wavelengths, ndwi_threshold=0.25):
     '''
     Returns array where NDWI greater than a threshold are set to NaN.
 
@@ -199,7 +222,6 @@ def mask_water_using_ndwi(array, hdr_path, ndwi_threshold=0.25):
 
     '''
 
-    wavelengths,_,_ = read_hdr_metadata(hdr_path)
     green_index = np.argmin(np.abs(wavelengths - 559))
     nir_index = np.argmin(np.abs(wavelengths - 864))
     green = array[:, :, green_index] 
