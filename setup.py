@@ -16,7 +16,7 @@ ext_modules = [
 
 setup(
     name="hyperquest", 
-    version="0.1.9", 
+    version="0.1.10", 
     author="Brent Wilder", 
     author_email="brentwilder@u.boisestate.edu",
     description=" A Python package for Hyperspectral quality estimation in hyperspectral imaging (imaging spectroscopy)",
@@ -26,15 +26,15 @@ setup(
     ext_modules=ext_modules,
     packages=find_packages(), 
     install_requires=[
-        "numpy>=1.4.0", 
+        "numpy<2.0.0", 
         "pandas>=1.2.0",
         "scikit-image>=0.18.0",
         "scikit-learn>=0.24.0",
         "joblib>=1.0.0", 
         "cython>=3.0.11",
         "spectral>=0.23.0",
-        "dem_stitcher>=2.5",
-        "pysolar>=0.13"
+        "pysolar>=0.13",
+        "h5netcdf>=1.5.0"
         ],
     classifiers=[
         "Programming Language :: Python :: 3",

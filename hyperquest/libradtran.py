@@ -28,15 +28,15 @@ def get_libradtran_install_path(user_input_path):
 
 
 
-def get_libradtran_output_dir(hdr_path):
+def get_libradtran_output_dir(data_path):
     '''
     TODO
     '''
 
-    filename = os.path.splitext(os.path.basename(hdr_path))[0]
+    filename = os.path.splitext(os.path.basename(data_path))[0]
     
     # directory where hdr_path is located
-    parent_dir = os.path.dirname(os.path.abspath(hdr_path))
+    parent_dir = os.path.dirname(os.path.abspath(data_path))
     
     # Define the rtm output directory
     lrt_out_dir = os.path.join(parent_dir, f'rtm-{filename}')

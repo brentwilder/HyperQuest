@@ -1,7 +1,4 @@
-from dem_stitcher import stitch_dem
-import rasterio as rio
 from pysolar import solar
-from rasterio.warp import transform_bounds
 from joblib import Parallel, delayed
 from os.path import abspath
 import subprocess
@@ -10,45 +7,34 @@ from .libradtran import *
 from .utils import *
 
 def run_libradtran(h2o_mm, aod_at_550nm, sensor_zenith_angle, sensor_azimith_angle,
-                   hdr_path, libradtran_path, ncpus=1, o3_DU=300, albedo=0.15):
+                   path_to_data, average_elevation_meters, lat, lon, libradtran_path, ncpus=1, o3_DU=300, albedo=0.15):
     '''
     TODO
     '''
 
     # Get absolute path
-    hdr_path = abspath(hdr_path)
+    path_to_data = abspath(path_to_data)
     libradtran_path = abspath(libradtran_path)
 
     # path_to_libradtran_install
     # get abs, get bin directory... throw error if not found
     path_to_libradtran_bin = get_libradtran_install_path(libradtran_path)
 
-    # Get data from hdr
-    wavelength, fwhm, obs_time = read_hdr_metadata(hdr_path)
+    # Identify data type
+    if path_to_data.lower().endswith('.nc'):
+        _, _, _, obs_time = retrieve_data_from_nc(path_to_data)
+    else:
+        # get wavelengths
+        _, _, obs_time = read_hdr_metadata(path_to_data)
+
+    # convert to doy
     doy = obs_time.timetuple().tm_yday
 
     # path to where runs are saved
-    lrt_out_dir = get_libradtran_output_dir(hdr_path)
-
-    # Get bounds
-    img_path = get_img_path_from_hdr(hdr_path)
-    with rio.open(img_path) as dataset:
-        bounds_utm = dataset.bounds
-        # to EPSG:4326 , as xmin, ymin, xmax, ymax in epsg:4326
-        bounding_box = transform_bounds(dataset.crs, 'EPSG:4326', *bounds_utm)
+    lrt_out_dir = get_libradtran_output_dir(path_to_data)
     
-    # Get Copernicus DEM data based on bounding box in hdr 
-    # (assume mus = mu0 ; flat assumption) ...  X is an mxn numpy array
-    X, _ = stitch_dem(bounding_box, dem_name='glo_90')
-    X = X[:, :].flatten()
-    X = X[X < 8848] #mt everest
-    X = X[X > -430] #deadsea
-    X = X[~np.isnan(X)]
-    altitude_km = np.nanmean(X) / 1000
-
-    # Get average lat and lon
-    lon = np.mean([bounding_box[0], bounding_box[2]])
-    lat = np.mean([bounding_box[1], bounding_box[3]])
+    # average altitude in km
+    altitude_km = average_elevation_meters / 1000
 
     # use pysolar compute saa and sza
     phi0 = solar.get_azimuth(lat,lon, obs_time)

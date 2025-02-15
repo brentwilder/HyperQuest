@@ -6,14 +6,14 @@ from .utils import *
 
 
 
-def sub_pixel_shift(hdr_path, band_index_vnir, band_index_vswir, no_data_value=-9999, upsample_factor=5000):
+def sub_pixel_shift(path_to_data, band_index_vnir, band_index_vswir, no_data_value=-9999, upsample_factor=5000):
     '''
     A wrapper function for skimage.registration's `phase_cross_correlation`
 
 
 
     Parameters:
-        hdr_path (str): Path to the .hdr file..
+        path_to_data (str): Path to the .hdr or .nc
         band_index_vnir (int): Band index for VNIR camera , assuming the first band is 0.
         band_index_vswir (int): Band index for VSWIR camera , assuming the first band is 0.
         no_data_value (int): Assumed to be -9999.
@@ -23,9 +23,13 @@ def sub_pixel_shift(hdr_path, band_index_vnir, band_index_vswir, no_data_value=-
         Tuple containing shift in the X direction and shift in the Y direction (in pixels)
     '''
 
-    # Load image data
-    img_path = get_img_path_from_hdr(hdr_path)
-    array = np.array(envi.open(hdr_path, img_path).load(), dtype=np.float64)
+    # Identify data type
+    if path_to_data.lower().endswith('.nc'):
+        array, _, _, _ = retrieve_data_from_nc(path_to_data)
+    else:
+        # Load raster
+        img_path = get_img_path_from_hdr(path_to_data)
+        array = np.array(envi.open(path_to_data, img_path).load(), dtype=np.float64)
 
     # Select the desired bands (VNIR and VSWIR)
     vnir_band = array[:, :, band_index_vnir]
