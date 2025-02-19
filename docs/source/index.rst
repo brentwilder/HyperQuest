@@ -1,5 +1,5 @@
 Welcome to HyperQuest documentation!
-===================================
+==================================================================================
 
 **HyperQuest** Python package for estimating image-wide quality estimation metrics of hyperspectral imaging (imaging spectroscopy). 
 Computations are sped up and scale with number of cpus.

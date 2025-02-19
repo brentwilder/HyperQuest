@@ -1,7 +1,11 @@
-import os
 import sys
-sys.path.insert(0, os.path.abspath('../hyperquest'))
-
+from pathlib import Path
+sys.path.insert(0, str(Path('../hyperquest').resolve()))
+print(sys.executable)
+# Print the sys.path to verify it
+print("Current sys.path:")
+for path in sys.path:
+    print(path)
 # Configuration file for the Sphinx documentation builder.
 
 # -- Project information

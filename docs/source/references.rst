@@ -1,5 +1,5 @@
 References
-=====
+==================================================================================
 - Cawse-Nicholson, K., Damelin, S. B., Robin, A., & Sears, M. (2012). Determining the intrinsic dimension of a hyperspectral image using random matrix theory. IEEE Transactions on Image Processing, 22(4), 1301-1310.
 - Cawse‐Nicholson, K., Raiho, A. M., Thompson, D. R., Hulley, G. C., Miller, C. E., Miner, K. R., ... & Zareh, S. K. (2022). Intrinsic dimensionality as a metric for the impact of mission design parameters. Journal of Geophysical Research: Biogeosciences, 127(8), e2022JG006876.
 - Cogliati, S., Sarti, F., Chiarantini, L., Cosi, M., Lorusso, R., Lopinto, E., ... & Colombo, R. (2021). The PRISMA imaging spectroscopy mission: overview and first performance analysis. Remote sensing of environment, 262, 112499.
