@@ -3,10 +3,10 @@ SNR
 Todo: summary here
 
 #### `hrdsdc()`
-.. autofunction:: hyperquest.hrdsdc
+.. autofunction:: hyperquest.snr.hrdsdc
 
 #### `rlsd()`
-.. autofunction:: hyperquest.rlsd
+.. autofunction:: hyperquest.snr.rlsd
 
 #### `ssdc()`
-.. autofunction:: hyperquest.rlsd
+.. autofunction:: hyperquest.snr.ssdc
