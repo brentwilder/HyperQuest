@@ -74,7 +74,7 @@ def random_matrix_theory(path_to_data, noise_variance, mask_waterbodies=True, al
 
     # Get the noise covariance matrix of size bands x bands
     noise_variance[np.isnan(noise_variance)] = 0
-    N = np.diag(noise_variance).copy()
+    N = noise_variance.T * noise_variance / bands
     N[np.isnan(N)] = 0
 
     # Eigenvectors and eigenvalues of S
