@@ -2,7 +2,7 @@ SNR
 ==========================
 Todo: summary here
 
-.. currentmodule:: hyperquest
+.. currentmodule:: hyperquest.snr
 
 `hrdsdc()`
 ------------------

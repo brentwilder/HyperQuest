@@ -1,7 +1,3 @@
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path('..', 'hyperquest').resolve()))
-
 # Configuration file for the Sphinx documentation builder.
 
 # -- Project information
