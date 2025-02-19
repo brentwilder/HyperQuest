@@ -1,22 +1,41 @@
 import numpy as np
-import matplotlib.pyplot as plt
-import numpy as np
-import re
-from os.path import abspath, exists
-from dateutil import parser
-from datetime import timezone, datetime
-import numpy as np
 from spectral import *
-import h5netcdf
 
-def sigma_theshold(image, rotate, sigma_multiplier = 3, no_data_value=-9999):
+from .utils import *
+
+def sigma_theshold(path_to_data, rotate, sigma_multiplier = 3):
     '''
-    TODO
-    Yokoya 2010, Preprocessing of hyperspectral imagery with consideration of smile and keystone properties
+    Uses a sigma threshold counting neighboring pixels to determine if striping is present, as presented in,
 
-    Built out to also work with georectified imagery so we can assess quality of actual TOA radiance products.
+    Yokoya 2010, Preprocessing of hyperspectral imagery with consideration of smile and keystone properties,
 
+    NOTE: similar to Smile methods, this assumes you have the data (or know the rotation) so that cross-track corresponds correctly.
+
+    Parameters: 
+        path_to_data (str): Path to the .hdr or .nc
+        rotate (int): rotate counter clockwise, either 0, 90, 180, or 270.
+        sigma_multiplier (int,float): levels of sigma for threshold.
+
+    Returns:
+        s (ndarray): array of same shape of image where 0 is no stripe and 1 is classified as stripe.
+
+    
     '''
+
+    # Identify data type
+    if path_to_data.lower().endswith('.nc'):
+        image, fwhm, w, obs_time = retrieve_data_from_nc(path_to_data)
+    else:
+        # Load raster
+        img_path = get_img_path_from_hdr(path_to_data)
+        image = np.array(envi.open(path_to_data, img_path).load(), dtype=np.float64)
+        
+        # get wavelengths
+        w, fwhm, obs_time = read_hdr_metadata(path_to_data)
+
+    # Ensure 2d
+    if len(image.shape) != 2:
+        raise Exception('Data needs to be a 2D array.')
 
     # ensure this is the raw data and has not been georeferenced.
     if (image[:,:]<0).sum() > 0:
@@ -31,12 +50,6 @@ def sigma_theshold(image, rotate, sigma_multiplier = 3, no_data_value=-9999):
         image = np.rot90(image, axes=(0,1), k=2)
     elif rotate>=270:
         image = np.rot90(image, axes=(0,1), k=3)
-
-    if len(image.shape) != 2:
-        raise Exception('Data needs to be a 2D array.')
-
-    # Mask no data values
-    image[image <= no_data_value] = np.nan
 
     # create striping mask
     s = np.full_like(image, fill_value=0)
@@ -60,12 +73,6 @@ def sigma_theshold(image, rotate, sigma_multiplier = 3, no_data_value=-9999):
                 x_left = image[i, j - 1]
                 x_right = image[i, j + 1]
 
-                #plt.imshow(image)
-                #plt.scatter(j - 1, i)
-                #plt.scatter(j + 1 , i)
-                #plt.scatter(j, i,  color='k')
-                #plt.show()
-
                 # EQ 1 in Yokoya 2010
                 if (x_ijk < x_left and x_ijk < x_right) or (x_ijk > x_left and x_ijk > x_right):
                     c += 1
@@ -79,8 +86,6 @@ def sigma_theshold(image, rotate, sigma_multiplier = 3, no_data_value=-9999):
     sigma = np.nanstd(c_array)
     mean = np.nanmean(c_array)
     threshold = mean + sigma*sigma_multiplier
-    plt.hist(c_array)
-    plt.show()
 
     # for each i, assess if stripe
     for j in range(c_array.shape[0]):
@@ -88,43 +93,3 @@ def sigma_theshold(image, rotate, sigma_multiplier = 3, no_data_value=-9999):
             s[:, j] = 1
 
     return s
-
-
-def retrieve_data_from_nc(path_to_data):
-    '''
-    TODO:
-
-    NOTE: keys are specific to sensor. right now, only EMIT uses NetCDF format that I know.. and the key is "radiance".
-    '''
-
-    # get absolute path 
-    path_to_data = abspath(path_to_data)
-
-    # read using h5netcdf
-    ds = h5netcdf.File(path_to_data, mode='r')
-
-    # get radiance and fhwm and wavelength
-    array = np.array(ds['radiance'], dtype=np.float64)
-    fwhm = np.array(ds['sensor_band_parameters']['fwhm'][:].data.tolist(), dtype=np.float64)
-    wave = np.array(ds['sensor_band_parameters']['wavelengths'][:].data.tolist(), dtype=np.float64)
-
-    obs_time = datetime.strptime(ds.attrs['time_coverage_start'], '%Y-%m-%dT%H:%M:%S+0000')
-
-    return array, fwhm, wave, obs_time
-
-
-
-
-from spectral import *
-
-# Define path to envi image header file
-path_to_data = './tests/data/EMIT_L1B_RAD_001_20220827T091626_2223906_009.nc'
-
-array, fwhm, wave, obs_time = retrieve_data_from_nc(path_to_data)
-
-array = array[:,:,15]
-
-s = sigma_theshold(array, rotate=0, sigma_multiplier=3)
-
-plt.imshow(s)
-plt.show()

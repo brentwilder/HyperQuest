@@ -8,7 +8,7 @@ from .utils import *
 from .mlr import *
 
 
-def rlsd(path_to_data, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
+def rlsd(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Residual-scaled local standard deviation (Gao et al., 2007)
 
@@ -17,13 +17,12 @@ def rlsd(path_to_data, block_size, nbins=150, ncpus=1, output_all=False, snr_in_
         block_size (int): Block size for partitioning (for example 5 would be 5x5 pixels).
         nbins (int, optional): Number of bins for histogram analysis. Default is 150.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
-        output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
         snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
-        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
         no_data_value (int or float): Value used to describe no data regions.
 
     Returns:
-        out: Either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
+        SNR, noise_variance : tuple containing SNR and noise variance with respect to wavelength.
 
     '''
 
@@ -72,22 +71,21 @@ def rlsd(path_to_data, block_size, nbins=150, ncpus=1, output_all=False, snr_in_
     mu = mask_atmos_windows(mu, w)
     sigma = mask_atmos_windows(sigma, w)
 
-    # division (watching out for zero in denominator)
-    out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
-    out[sigma == 0] = np.nan
+    # Compute SNR
+    snr = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
+    snr[sigma == 0] = np.nan
 
     # check to convert to db
     if snr_in_db is True:
-        out = linear_to_db(out)
-    
-    # check to have full output
-    if output_all is True:
-        out = (mu, sigma, out)
+        snr = linear_to_db(snr)
 
-    return out
+    # convert noise to variance
+    noise_variance = np.square(sigma, dtype=np.float64)
+
+    return snr, noise_variance
 
 
-def ssdc(path_to_data, block_size, nbins=150, ncpus=1, output_all=False, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
+def ssdc(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Spectral and spatial de-correlation (Roger & Arnold, 1996)
 
@@ -96,13 +94,12 @@ def ssdc(path_to_data, block_size, nbins=150, ncpus=1, output_all=False, snr_in_
         block_size (int): Block size for partitioning (for example 5 would be 5x5 pixels).
         nbins (int, optional): Number of bins for histogram analysis. Default is 150.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
-        output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
         snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
-        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
         no_data_value (int or float): Value used to describe no data regions.
 
     Returns:
-        out: either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
+        SNR, noise_variance : tuple containing SNR and noise variance with respect to wavelength.
 
     '''
 
@@ -151,23 +148,22 @@ def ssdc(path_to_data, block_size, nbins=150, ncpus=1, output_all=False, snr_in_
     mu = mask_atmos_windows(mu, w)
     sigma = mask_atmos_windows(sigma, w)
 
-    # division (watching out for zero in denominator)
-    out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
-    out[sigma == 0] = np.nan
+    # Compute SNR
+    snr = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
+    snr[sigma == 0] = np.nan
 
     # check to convert to db
     if snr_in_db is True:
-        out = linear_to_db(out)
-    
-    # check to have full output
-    if output_all is True:
-        out = (mu, sigma, out)
+        snr = linear_to_db(snr)
 
-    return out
+    # convert noise to variance
+    noise_variance = np.square(sigma, dtype=np.float64)
+
+    return snr, noise_variance
 
 
 def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, include_neighbor_pixel_in_mlr=True,
-           output_all=False, snr_in_db=False, mask_waterbodies=True, no_data_value=-9999):
+           snr_in_db=False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
 
@@ -178,13 +174,12 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
         n_pca (int): Number of PCAs to compute and provide to SLIC segmentation.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
         include_neighbor_pixel_in_mlr (bool, optional): If True, neighbor pixel is used in MLR (for k`). Else, MLR only contains spectral data (k+1, k-1).
-        output_all (bool, optional): Whether to return all outputs. Default is False returing SNR, True returns mu and sigma.
         snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
-        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
         no_data_value (int or float): Value used to describe no data regions.
 
     Returns:
-        out: either an ndarray of SNR, or a tuple containing (mu, sigma, SNR) with respect to wavelength.
+        SNR, noise_variance : tuple containing SNR and noise variance with respect to wavelength.
 
     '''
 
@@ -203,8 +198,8 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
     if mask_waterbodies is True:
         array = mask_water_using_ndwi(array, w)
 
-    # Mask no data values
-    array[array <= no_data_value] = np.nan
+    # Mask no data values (to negative 9999 for PCA and SLIC to work)
+    array[array <= no_data_value] = -9999
 
     # Apply PCA 
     pca = PCA(n_components=n_pca)
@@ -258,15 +253,14 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
     sigma = mask_atmos_windows(sigma, w)
 
     # Compute SNR
-    out = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
-    out[sigma == 0] = np.nan
+    snr = np.divide(mu, sigma, out=np.zeros_like(mu), where=(sigma != 0))
+    snr[sigma == 0] = np.nan
 
     # check to convert to db
     if snr_in_db is True:
-        out = linear_to_db(out)
+        snr = linear_to_db(snr)
 
-    # Output full results if requested
-    if output_all:
-        out = (mu, sigma, out)
+    # convert noise to variance
+    noise_variance = np.square(sigma, dtype=np.float64)
 
-    return out
+    return snr, noise_variance
