@@ -103,17 +103,27 @@ def ssdc(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
     '''
     Spectral and spatial de-correlation (Roger & Arnold, 1996)
 
-    Parameters:
-        path_to_data (str): Path to the .hdr or .nc
-        block_size (int): Block size for partitioning (for example 5 would be 5x5 pixels).
-        nbins (int, optional): Number of bins for histogram analysis. Default is 150.
-        ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
-        snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
-        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
-        no_data_value (int or float): Value used to describe no data regions.
+    Parameters
+    ----------
+    path_to_data : str
+        Path to the .hdr or .nc file that contains hyperspectral data.
+    block_size : int
+        Block size for partitioning (e.g., 5 would be 5x5 pixels).
+    nbins : int, optional
+        Number of bins for histogram analysis. Default is 150.
+    ncpus : int, optional
+        Number of CPUs for parallel processing. Default is 1.
+    snr_in_db : bool, optional
+        Whether the SNR is in dB. Default is False.
+    mask_waterbodies : bool, optional
+        Whether to mask water bodies based on an NDWI threshold of 0.25. Default is True.
+    no_data_value : int or float
+        Value used to describe no data regions.
 
-    Returns:
-        SNR, noise_variance : tuple containing SNR and noise variance with respect to wavelength.
+    Returns
+    -------
+    tuple
+        A tuple containing the Signal-to-Noise Ratio (SNR) and noise variance with respect to wavelength.
 
     '''
 
@@ -184,20 +194,30 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
            snr_in_db=False, mask_waterbodies=True, no_data_value=-9999):
     '''
     Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
+        
+    Parameters
+    ----------
+    path_to_data : str
+        Path to the .hdr or .nc file that contains hyperspectral data.
+    n_segments : int
+        The (approximate) number of labels in the segmented output image. see skimage.segmentation.slic for more.
+    compactness : float
+        Balances color proximity and space proximity. Higher values give more weight to space proximity, making superpixel shapes more square/cubic.see skimage.segmentation.slic for more.
+    ncpus : int, optional
+        Number of CPUs for parallel processing. Default is 1.
+    include_neighbor_pixel_in_mlr : bool, optional
+        If True, neighbor pixel is used in MLR (for k`). Else, MLR only contains spectral data (k+1, k-1).
+    snr_in_db : bool, optional
+        Whether the SNR is in dB. Default is False.
+    mask_waterbodies : bool, optional
+        Whether to mask water bodies based on an NDWI threshold of 0.25. Default is True.
+    no_data_value : int or float
+        Value used to describe no data regions.
 
-    Parameters:
-        path_to_data (str): Path to the .hdr or .nc
-        n_segments (int):  The (approximate) number of labels in the segmented output image. see skimage.segmentation.slic for more.
-        compactness (float):Balances color proximity and space proximity. Higher values give more weight to space proximity, making superpixel shapes more square/cubic.see skimage.segmentation.slic for more.
-        n_pca (int): Number of PCAs to compute and provide to SLIC segmentation.
-        ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
-        include_neighbor_pixel_in_mlr (bool, optional): If True, neighbor pixel is used in MLR (for k`). Else, MLR only contains spectral data (k+1, k-1).
-        snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
-        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
-        no_data_value (int or float): Value used to describe no data regions.
-
-    Returns:
-        SNR, noise_variance : tuple containing SNR and noise variance with respect to wavelength.
+    Returns
+    -------
+    tuple
+        A tuple containing the Signal-to-Noise Ratio (SNR) and noise variance with respect to wavelength.
 
     '''
 

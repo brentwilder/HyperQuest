@@ -13,15 +13,23 @@ def random_matrix_theory(path_to_data, noise_variance, mask_waterbodies=True, al
     Intrinsic dimensionality as a metric for the impact of mission design parameters. 
     Journal of Geophysical Research: Biogeosciences, 127(8), e2022JG006876.
 
-    Parameters: 
-        path_to_data (str): Path to the .hdr or .nc
-        noise_variance (ndarray): noise variance for each band. Used to compute N (noise covariance matrix of size bands x bands).
-        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
-        alpha (float): Significance level. 0.5 was found to be optimal in a study using hyperspectral data (Cawse-Nicholson et al., 2012).
-        no_data_value (int or float): Value used to describe no data regions.
+    Parameters
+    ----------
+    path_to_data : str 
+        Path to the .hdr or .nc
+    noise_variance : ndarray
+        Noise variance for each band. Used to compute N (noise covariance matrix of size bands x bands).
+    mask_waterbodies : bool, optional
+        Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
+    alpha : float 
+        Significance level. 0.5 was found to be optimal in a study using hyperspectral data (Cawse-Nicholson et al., 2012).
+    no_data_value : int or float
+        Value used to describe no data regions.
 
-    Returns:
-        K_est (int): Intrinsic Dimensionality (ID) of image.
+    Returns
+    -------
+    K_est : int 
+        Intrinsic Dimensionality (ID) of image.
 
     '''
 
