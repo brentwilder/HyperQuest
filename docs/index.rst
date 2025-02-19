@@ -19,4 +19,8 @@ Contents
    usage
    snr
    id
+   coreg
+   striping
+   smile
+   rtm
    references

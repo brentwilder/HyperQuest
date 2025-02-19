@@ -9,16 +9,22 @@ def sub_pixel_shift(path_to_data, band_index_vnir, band_index_vswir, no_data_val
     '''
     A wrapper function for skimage.registration's `phase_cross_correlation`
 
+    Parameters
+    ----------
+    path_to_data : str
+        Path to the .hdr or .nc
+    band_index_vnir : int
+        Band index for VNIR camera , assuming the first band is 0.
+    band_index_vswir : int
+        Band index for VSWIR camera , assuming the first band is 0.
+    no_data_value : int
+        Assumed to be -9999.
+    upsample_factor : int
+        Upsampling factor. Images will be registered to within 1 / upsample_factor of a pixel. 
 
-
-    Parameters:
-        path_to_data (str): Path to the .hdr or .nc
-        band_index_vnir (int): Band index for VNIR camera , assuming the first band is 0.
-        band_index_vswir (int): Band index for VSWIR camera , assuming the first band is 0.
-        no_data_value (int): Assumed to be -9999.
-        upsample_factor (int): Upsampling factor. Images will be registered to within 1 / upsample_factor of a pixel. 
-
-    Returns:
+    Returns
+    -------
+    tuple
         Tuple containing shift in the X direction, shift in the Y direction (in pixels), and wavelength for VNIR, wavelength for VSWIR
     '''
 

@@ -3,6 +3,7 @@ from spectral import *
 
 from .utils import *
 
+
 def sigma_theshold(path_to_data, rotate, sigma_multiplier = 3):
     '''
     Uses a sigma threshold counting neighboring pixels to determine if striping is present, as presented in,
@@ -11,14 +12,19 @@ def sigma_theshold(path_to_data, rotate, sigma_multiplier = 3):
 
     NOTE: similar to Smile methods, this assumes you have the data (or know the rotation) so that cross-track corresponds correctly.
 
-    Parameters: 
-        path_to_data (str): Path to the .hdr or .nc
-        rotate (int): rotate counter clockwise, either 0, 90, 180, or 270.
-        sigma_multiplier (int,float): levels of sigma for threshold.
+    Parameters
+    ----------
+    path_to_data : str
+        Path to the .hdr or .nc
+    rotate : int
+        rotate counter clockwise, either 0, 90, 180, or 270.
+    sigma_multiplier : int, float, optional 
+        levels of sigma for threshold.
 
-    Returns:
-        s (ndarray): array of same shape of image where 0 is no stripe and 1 is classified as stripe.
-
+    Returns
+    -------
+    s : ndarray
+        array of same shape of image where 0 is no stripe and 1 is classified as stripe.
     
     '''
 
