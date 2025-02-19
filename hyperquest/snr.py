@@ -37,6 +37,10 @@ def rlsd(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
         # get wavelengths
         w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
+    # ensure data is hyperspectral 
+    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+        raise Exception('Data needs to be a hyperspectral image.')
+
     # mask waterbodies
     if mask_waterbodies is True:
         array = mask_water_using_ndwi(array, w)
@@ -113,6 +117,10 @@ def ssdc(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
         
         # get wavelengths
         w, fwhm, obs_time = read_hdr_metadata(path_to_data)
+
+    # ensure data is hyperspectral 
+    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+        raise Exception('Data needs to be a hyperspectral image.')
 
     # mask waterbodies
     if mask_waterbodies is True:
@@ -193,6 +201,10 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
         
         # get wavelengths
         w, fwhm, obs_time = read_hdr_metadata(path_to_data)
+
+    # ensure data is hyperspectral 
+    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+        raise Exception('Data needs to be a hyperspectral image.')
 
     # mask waterbodies
     if mask_waterbodies is True:

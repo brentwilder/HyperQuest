@@ -46,6 +46,10 @@ def smile_metric(path_to_data, rotate, mask_waterbodies=True):
     if len(array.shape) != 3:
         raise Exception('Data needs to be a 3D array.')
     
+    # ensure data is hyperspectral 
+    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+        raise Exception('Data needs to be a hyperspectral image.')
+    
     # Perform rotation if needed
     if rotate != 0 and rotate != 90 and rotate != 180 and rotate != 270:
         raise ValueError('rotate must be 90, 180, or 270.')
@@ -67,7 +71,7 @@ def smile_metric(path_to_data, rotate, mask_waterbodies=True):
     o2_std = np.full(array.shape[1], fill_value=np.nan)
 
     #  first, ensure the wavelengths covered the span of o2 and co2 features
-    if np.max(w) < 800:
+    if np.max(w) < 800: # this will capture even VNIR only like DESIS (400-1000nm)
         return o2_mean, co2_mean, o2_std, co2_std
 
     # Find closest band to co2 and O3
@@ -90,7 +94,7 @@ def smile_metric(path_to_data, rotate, mask_waterbodies=True):
     o2_std = o2_std.flatten()
 
     # likely has enough data to find CO2
-    if np.max(w)>2100: 
+    if np.max(w)>2100: # this is a bit arbitrary, but assessing if there is VSWIR data.
         co2_b1 = array[:, :, co2_index] 
         co2_b2 = array[:, :, co2_index+1]
         fwhm_bar_co2 = np.nanmean([fwhm[co2_index], fwhm[co2_index+1]])
@@ -150,6 +154,14 @@ def nodd_o2a(path_to_data, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, m
         
         # get wavelengths
         w_sensor, fwhm, obs_time = read_hdr_metadata(path_to_data)
+
+    # ensure data is hyperspectral 
+    if (np.max(w_sensor) - np.min(w_sensor)) / len(w_sensor) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+        raise Exception('Data needs to be a hyperspectral image.')
+
+    # ensure data has wavelength range in O2-A band
+    if np.max(w_sensor) < 790: # 790 is max window used in fitting procedure
+        raise Exception(f'Wavelength range of {np.min(w_sensor)}-{np.max(w_sensor)} nm is not appropriate for this method.')
 
     # ensure this is the raw data and has not been georeferenced.
     if (array[:,:,0]<0).sum() > 0:

@@ -39,6 +39,10 @@ def random_matrix_theory(path_to_data, noise_variance, mask_waterbodies=True, al
     if len(img.shape) != 3:
         raise Exception('Data needs to be a 3D array.')
 
+    # ensure data is hyperspectral 
+    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+        raise Exception('Data needs to be a hyperspectral image.')
+
     # mask waterbodies
     if mask_waterbodies is True:
         img = mask_water_using_ndwi(img, w)
