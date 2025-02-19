@@ -23,7 +23,7 @@ The latest release can be installed via pip:
 pip install hyperquest
 ```
 
-Available methods and summaries can be found in ![documentation](https://hyperquest.readthedocs.io).
+Available methods and summaries can be found in [documentation](https://hyperquest.readthedocs.io).
 
 ## Usage example
 
