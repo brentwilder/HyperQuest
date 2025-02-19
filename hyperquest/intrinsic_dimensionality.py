@@ -74,9 +74,10 @@ def random_matrix_theory(path_to_data, noise_variance, mask_waterbodies=True, al
 
     # Get the noise covariance matrix of size bands x bands
     noise_variance[np.isnan(noise_variance)] = 0
-    N = noise_variance.T * noise_variance / bands
+    noise_variance  = np.expand_dims(noise_variance, axis=1)
+    N = np.diag(np.diag(noise_variance.T * noise_variance / bands)) # similar to https://github.com/bearshng/LRTFL0/blob/master/estNoise.m
     N[np.isnan(N)] = 0
-
+    
     # Eigenvectors and eigenvalues of S
     # Note these are opposite of MATLAB [evec_S,eval_S]
     eval_S, evec_S = np.linalg.eig(S)
