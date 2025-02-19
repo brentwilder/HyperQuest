@@ -48,3 +48,9 @@ Table of Methods
    * - **Radiative Transfer**
      - `run_libradtran()`
      - Runs libRadtran based on user input geometry and atmosphere at 0.1 nm spectral resolution. Saves to a .csv file for use in methods requiring radiative transfer.
+
+
+Example
+----------------
+see the following for an example using an EMIT image,
+- https://github.com/brentwilder/HyperQuest/blob/main/tutorials/example_using_EMIT.ipynb
