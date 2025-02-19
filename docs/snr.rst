@@ -5,15 +5,15 @@ Todo: summary here
 
 `hrdsdc()`
 ------------------
-.. autofunction:: snr.hrdsdc
+.. autofunction:: hyperquest.snr.hrdsdc
 
 
 `rlsd()`
 ------------------
-.. autofunction:: snr.rlsd
+.. autofunction:: hyperquest.snr.rlsd
 
 
 `ssdc()`
 ------------------
-.. autofunction:: snr.ssdc
+.. autofunction:: hyperquest.snr.ssdc
 
