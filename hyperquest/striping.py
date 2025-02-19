@@ -4,7 +4,7 @@ from spectral import *
 from .utils import *
 
 
-def sigma_theshold(path_to_data, rotate, sigma_multiplier = 3):
+def sigma_threshold(path_to_data, rotate, sigma_multiplier = 3):
     '''
     Uses a sigma threshold counting neighboring pixels to determine if striping is present, as presented in,
 
