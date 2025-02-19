@@ -2,12 +2,13 @@
 
 # -- Project information
 
-project = 'Lumache'
-copyright = '2021, Graziella'
-author = 'Graziella'
+project = 'hyperquest'
+copyright = '2025, Brent Wilder'
+author = 'Brent Wilder'
 
 release = '0.1'
-version = '0.1.0'
+version = '0.1.12'
+license = 'MIT'
 
 # -- General configuration
 
