@@ -2,19 +2,18 @@ SNR
 ==========================
 Todo: summary here
 
-.. currentmodule:: hyperquest.snr
 
 `hrdsdc()`
 ------------------
-.. autofunction:: hrdsdc
+.. autofunction:: snr.hrdsdc
 
 
 `rlsd()`
 ------------------
-.. autofunction:: rlsd
+.. autofunction:: snr.rlsd
 
 
 `ssdc()`
 ------------------
-.. autofunction:: ssdc
+.. autofunction:: snr.ssdc
 
