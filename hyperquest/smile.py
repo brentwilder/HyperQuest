@@ -20,7 +20,7 @@ def smile_metric(path_to_data, rotate, mask_waterbodies=True):
     Parameters: 
         path_to_data (str): Path to the .hdr or .nc
         rotate (int): rotate counter clockwise, either 0, 90, 180, or 270.
-        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
 
     Returns:
         o2_mean, co2_mean, o2_std, co2_std: 1d array of cross-track mean do2, mean dco2, std do2, std dco2
@@ -133,7 +133,7 @@ def nodd_o2a(path_to_data, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, m
         path_to_rtm_output_csv (str): Path to output from radiative transfer.
         ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
         rho_s (float): value from 0-1. As stated, this does not influence nodd method very much and 0.15 is common in literature.
-        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0. Default is True.
+        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
 
     Returns:
         cwl_opt, fwhm_opt, sensor_band_near_760, fwhm_near_760: 1d array of cross-track CWL, 1d array of cross-track FWHM, band near 760, fwhm near 760

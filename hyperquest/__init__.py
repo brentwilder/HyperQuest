@@ -6,3 +6,4 @@ from .coregistration import *
 from .libradtran import *
 from .optimization import *
 from .radiative_transfer import *
+from .intrinsic_dimensionality import *
