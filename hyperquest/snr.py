@@ -10,19 +10,25 @@ from .mlr import *
 
 def rlsd(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
     '''
-    Residual-scaled local standard deviation (Gao et al., 2007)
+ Residual-scaled local standard deviation (Gao et al., 2007)
 
-    Parameters: 
-        path_to_data (str): Path to the .hdr or .nc
-        block_size (int): Block size for partitioning (for example 5 would be 5x5 pixels).
-        nbins (int, optional): Number of bins for histogram analysis. Default is 150.
-        ncpus (int, optional): Number of CPUs for parallel processing. Default is 1.
-        snr_in_db (bool, optional): Whether SNR is in dB. Default is False.
-        mask_waterbodies (bool, optional): Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
-        no_data_value (int or float): Value used to describe no data regions.
+    :param path_to_data: Path to the .hdr or .nc file
+    :type path_to_data: str
+    :param block_size: Block size for partitioning (e.g., 5 would be 5x5 pixels)
+    :type block_size: int
+    :param nbins: Number of bins for histogram analysis. Default is 150.
+    :type nbins: int, optional
+    :param ncpus: Number of CPUs for parallel processing. Default is 1.
+    :type ncpus: int, optional
+    :param snr_in_db: Whether SNR is in dB. Default is False.
+    :type snr_in_db: bool, optional
+    :param mask_waterbodies: Whether to mask water bodies based on NDWI threshold of 0.25. Default is True.
+    :type mask_waterbodies: bool, optional
+    :param no_data_value: Value used to describe no data regions.
+    :type no_data_value: int or float
 
-    Returns:
-        SNR, noise_variance : tuple containing SNR and noise variance with respect to wavelength.
+    :returns: SNR and noise variance with respect to wavelength.
+    :rtype: tuple
 
     '''
 
