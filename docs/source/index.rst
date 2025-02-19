@@ -17,4 +17,5 @@ Contents
 .. toctree::
 
    usage
+   snr
    references

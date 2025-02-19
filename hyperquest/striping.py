@@ -29,9 +29,6 @@ def sigma_theshold(path_to_data, rotate, sigma_multiplier = 3):
         # Load raster
         img_path = get_img_path_from_hdr(path_to_data)
         image = np.array(envi.open(path_to_data, img_path).load(), dtype=np.float64)
-        
-        # get wavelengths
-        w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # Ensure 2d
     if len(image.shape) != 2:
