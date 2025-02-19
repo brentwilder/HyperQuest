@@ -10,10 +10,10 @@
 
 __Important: this package assumes the following about input hyperspectral data:__ 
 - Data must be in NetCDF (.nc) or ENVI (.hdr)
-- Data in radiance and not georeferenced
-    - if using RTM must be in microW/cm2/nm/sr (for now)
-- Pushbroom imaging spectrometer, such as:
-    - AVIRIS-Classic, AVIRIS-NG, AVIRIS-3, DESIS, EnMAP, EMIT, GaoFen-5, HISUI, Hyperion EO-1, HySIS, PRISMA, SEBASS, Tanager
+- Data not georeferenced (typically referred to as L1B before ortho)
+- Data in radiance (assumed microW/cm2/nm/sr (for now))
+- Pushbroom imaging spectrometer, such as, but not limited to:
+    - AVIRIS-NG, AVIRIS-3, DESIS, EnMAP, EMIT, GaoFen-5, HISUI, Hyperion EO-1, HySIS, PRISMA, Tanager-1
 
 ## Installation Instructions
 
@@ -31,16 +31,17 @@ pip install hyperquest
 | **SNR**                  | `hrdsdc()`                 | Homogeneous regions division and spectral de-correlation (Gao et al., 2008)                                                                   |
 |                          | `rlsd()`                   | Residual-scaled local standard deviation (Gao et al., 2007)                                                                                   |
 |                          | `ssdc()`                   | Spectral and spatial de-correlation (Roger & Arnold, 1996)                                                                                    |
+| **Intrinsic Dimensionality (ID)**| `random_matrix_theory()` | Determining the Intrinsic Dimension (ID) of a Hyperspectral Image Using Random Matrix Theory (Cawse-Nicholson et al., 2012, Cawse-Nicholson et al., 2022) |
 | **Co-Registration**      | `sub_pixel_shift()`        | Computes sub pixel co-registration between the VNIR & VSWIR imagers using skimage phase_cross_correlation                                     |
 | **Striping (not destriping)**| `sigma_theshold()`     | As presented in Yokoya 2010, Preprocessing of hyperspectral imagery with consideration of smile and keystone properties.                      |
 | **Smile**                | `smile_metric()`           | Similar to MATLAB "smileMetric". Computes derivatives of O2 and CO2 absorption features across-track (Dadon et al., 2010).                    |
 |                          | `nodd_o2a()`               | Similar to method in Felde et al. (2003) to solve for nm shift at O2-A across-track. Requires radiative transfer model run.                   |
-| **Radiative Transfer**   | `run_libradtran()`         | Runs libRadtran based on user input geometry and atmosphere at 1.0 cm-1. Saves to a .csv file for use in methods requiring radiative transfer.|
+| **Radiative Transfer**   | `run_libradtran()`         | Runs libRadtran based on user input geometry and atmosphere at 0.1 nm spectral resolution. Saves to a .csv file for use in methods requiring radiative transfer.|
 
 
 ## Usage example
 
-- see [SNR example](tutorials/example_using_EMIT.ipynb) and  [Smile example](tutorials/testing_smile_methods.ipynb) which has different methods computed over Libya-4.
+- see [EMIT example](tutorials/example_using_EMIT.ipynb) which has different methods computed over Libya-4.
 
 ## libRadtran install instructions
 - Can be installed on Unix type system using the following link:
@@ -49,6 +50,8 @@ pip install hyperquest
 
 ## References:
 
+- Cawse-Nicholson, K., Damelin, S. B., Robin, A., & Sears, M. (2012). Determining the intrinsic dimension of a hyperspectral image using random matrix theory. IEEE Transactions on Image Processing, 22(4), 1301-1310.
+- Cawse‐Nicholson, K., Raiho, A. M., Thompson, D. R., Hulley, G. C., Miller, C. E., Miner, K. R., ... & Zareh, S. K. (2022). Intrinsic dimensionality as a metric for the impact of mission design parameters. Journal of Geophysical Research: Biogeosciences, 127(8), e2022JG006876.
 - Cogliati, S., Sarti, F., Chiarantini, L., Cosi, M., Lorusso, R., Lopinto, E., ... & Colombo, R. (2021). The PRISMA imaging spectroscopy mission: overview and first performance analysis. Remote sensing of environment, 262, 112499.
 - Curran, P. J., & Dungan, J. L. (1989). Estimation of signal-to-noise: a new procedure applied to AVIRIS data. IEEE Transactions on Geoscience and Remote sensing, 27(5), 620-628.
 - Dadon, A., Ben-Dor, E., & Karnieli, A. (2010). Use of derivative calculations and minimum noise fraction transform for detecting and correcting the spectral curvature effect (smile) in Hyperion images. IEEE Transactions on Geoscience and Remote Sensing, 48(6), 2603-2612.
