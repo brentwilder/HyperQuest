@@ -30,6 +30,11 @@ def mlr_spectral(np.ndarray[np.float64_t, ndim=2] block):
 
     # for k in range of wavelengths (except first and last)
     for k in range(1, cols - 1):
+
+        # ensure not using bad band if reflectance product
+        if np.isnan(block[0, k]) or np.isnan(block[0, k+1]) or np.isnan(block[0, k-1]):
+            continue
+
         # create the X and y for MLR
         X = np.vstack([block[:, k - 1], block[:, k + 1]]).T
         y = block[:, k]
@@ -69,6 +74,11 @@ def mlr_spectral_spatial(np.ndarray[np.float64_t, ndim=2] block):
 
     # for k in range of wavelengths (except first and last)
     for k in range(1, cols - 1):
+
+        # ensure not using bad band if reflectance product
+        if np.isnan(block[0, k]) or np.isnan(block[0, k+1]) or np.isnan(block[0, k-1]):
+            continue
+
         # create the X and y for MLR
         X = np.vstack([block[:, k - 1], block[:, k + 1]]).T
         neighbor_k = np.roll(block[:, k], shift=1)  # Shift 1 to find a neighbor pixel

@@ -10,8 +10,8 @@
 
 __Important: this package assumes the following about input hyperspectral data:__ 
 - Data must be in NetCDF (.nc) or ENVI (.hdr)
-- Data not georeferenced (typically referred to as L1B before ortho)
-- Data in radiance (assumed microW/cm2/nm/sr (for now))
+- For smile & striping methods, data must not be georeferenced (typically referred to as L1B before ortho)
+  - For methods invloving radiative transfer modeling, data must be in radiance 
 - Pushbroom imaging spectrometer, such as, but not limited to:
     - AVIRIS-NG, AVIRIS-3, DESIS, EnMAP, EMIT, GaoFen-5, HISUI, Hyperion EO-1, HySIS, PRISMA, Tanager-1
 

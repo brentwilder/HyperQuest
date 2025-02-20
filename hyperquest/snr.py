@@ -48,7 +48,7 @@ def rlsd(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
         w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # ensure data is hyperspectral 
-    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+    if (np.max(w) - np.min(w)) / len(w) > 50: # assume hyperspectral data not coarser than 50 nm spec res
         raise Exception('Data needs to be a hyperspectral image.')
 
     # mask waterbodies
@@ -139,7 +139,7 @@ def ssdc(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
         w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # ensure data is hyperspectral 
-    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+    if (np.max(w) - np.min(w)) / len(w) > 50: # assume hyperspectral data not coarser than 50 nm spec res
         raise Exception('Data needs to be a hyperspectral image.')
 
     # mask waterbodies
@@ -233,7 +233,7 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
         w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # ensure data is hyperspectral 
-    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+    if (np.max(w) - np.min(w)) / len(w) > 50: # assume hyperspectral data not coarser than 50 nm spec res
         raise Exception('Data needs to be a hyperspectral image.')
 
     # mask waterbodies
@@ -261,7 +261,7 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
     def process_segment(u):
         test_mask = (segments == u)
         test_segment = array[test_mask]
-        test_segment = test_segment[test_segment[:, 0] > -99]
+        test_segment = test_segment[test_segment[:, 0] > -99] #spatial nan
         if test_segment.shape[0] != 0:
             return test_segment
         else:

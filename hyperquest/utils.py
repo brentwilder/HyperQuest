@@ -195,7 +195,11 @@ def retrieve_data_from_nc(path_to_data):
     ds = h5netcdf.File(path_to_data, mode='r')
 
     # get radiance and fhwm and wavelength
-    array = np.array(ds['radiance'], dtype=np.float64)
+    if 'rad' in path_to_data.lower():
+        array = np.array(ds['radiance'], dtype=np.float64)
+    else:
+        array = np.array(ds['reflectance'], dtype=np.float64)
+
     fwhm = np.array(ds['sensor_band_parameters']['fwhm'][:].data.tolist(), dtype=np.float64)
     wave = np.array(ds['sensor_band_parameters']['wavelengths'][:].data.tolist(), dtype=np.float64)
 
@@ -245,7 +249,7 @@ def mask_atmos_windows(spectra, wavelengths):
         spectra: TOA radiance data but with noisy atmospheric bands masked out
     '''
     
-    mask = ((wavelengths >= 1250) & (wavelengths <= 1450)) | ((wavelengths >= 1780) & (wavelengths <= 1950))
+    mask = ((wavelengths >= 1250) & (wavelengths <= 1450)) | ((wavelengths >= 1750) & (wavelengths <= 1970))
 
     spectra[mask] = np.nan
     
