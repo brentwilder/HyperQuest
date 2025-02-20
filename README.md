@@ -22,6 +22,13 @@ The latest release can be installed via pip:
 pip install hyperquest
 ```
 
+If using Windows PC, [you must have "Build Tools"](https://wiki.python.org/moin/WindowsCompilers) installed to compile cython code,
+- Testing on my beat-up Windows PC (Windows11), I did the following to get it to work
+  - Installed Visual Studio Build Tools 2022
+  - making sure to check the box next to "Desktop development with C++"
+  - and then, pip install hyperquest
+
+
 Available methods and summaries can be found in [documentation](https://hyperquest.readthedocs.io).
 
 ## Usage example
