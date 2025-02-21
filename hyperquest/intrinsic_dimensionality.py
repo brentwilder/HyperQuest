@@ -48,12 +48,12 @@ def random_matrix_theory(path_to_data, noise_variance, mask_waterbodies=True, al
         raise Exception('Data needs to be a 3D array.')
 
     # ensure data is hyperspectral 
-    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+    if (np.max(w) - np.min(w)) / len(w) > 50: # assume hyperspectral data not coarser than 50 nm spec res
         raise Exception('Data needs to be a hyperspectral image.')
 
     # mask waterbodies
     if mask_waterbodies is True:
-        img = mask_water_using_ndwi(img, w)
+        img = mask_water_using_ndwi(img, w, no_data_value=no_data_value)
 
     # Mask no data values
     img[img <= no_data_value] = np.nan
@@ -86,22 +86,23 @@ def random_matrix_theory(path_to_data, noise_variance, mask_waterbodies=True, al
 
     # Get the noise covariance matrix of size bands x bands
     noise_variance[np.isnan(noise_variance)] = 0
-    noise_variance  = np.expand_dims(noise_variance, axis=1)
-    N = np.diag(np.diag(noise_variance.T * noise_variance / bands)) # similar to https://github.com/bearshng/LRTFL0/blob/master/estNoise.m
+    N = np.diag(noise_variance.T * noise_variance / bands) # similar to https://github.com/bearshng/LRTFL0/blob/master/estNoise.m
     N[np.isnan(N)] = 0
-    
+
     # Eigenvectors and eigenvalues of S
     # Note these are opposite of MATLAB [evec_S,eval_S]
     eval_S, evec_S = np.linalg.eig(S)
-    sortind = np.argsort(eval_S)[::-1]
-    eval_S = eval_S[sortind]
-    evec_S = evec_S[:,sortind]
+    eval_S = np.diag(eval_S)
+    sortind = np.argsort(-eval_S)
+    evec_S = evec_S[np.arange(evec_S.shape[0])[:,None], sortind]
+    eval_S = eval_S[np.arange(eval_S.shape[0])[:,None], sortind]
 
     # Eigenvectors and eigenvalues of Pi = S-N
     eval_Pi, evec_Pi = np.linalg.eig(S-N) 
-    sortind2 = np.argsort(eval_Pi)[::-1]
-    eval_Pi = eval_Pi[sortind2]
-    evec_Pi = evec_Pi[:,sortind2]
+    eval_Pi = np.diag(eval_Pi)
+    sortind2 = np.argsort(-eval_Pi)
+    evec_Pi = evec_Pi[np.arange(evec_Pi.shape[0])[:,None], sortind2]
+    eval_Pi = eval_Pi[np.arange(eval_Pi.shape[0])[:,None], sortind2]
 
     # there is a different threshold for each band to represent noise conditions
     X = []
@@ -110,9 +111,8 @@ def random_matrix_theory(path_to_data, noise_variance, mask_waterbodies=True, al
     X = np.array(X)
 
     # The ID is the number of eigenvalues exceeding the threshold X.T*sigma
-    thresholded = np.maximum(0, eval_S - X * sigma)
-    intersect_i = np.argwhere(thresholded > 0)
+    eval_S = np.diag(eval_S) # put back to 1d
+    intersect_i = np.argwhere((eval_S > X.T * sigma) & (eval_S - X.T * sigma >= 0))
     K_est = len(intersect_i)
-
 
     return K_est

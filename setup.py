@@ -5,7 +5,6 @@ import numpy
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-
 ext_modules = [
     Extension(
         'hyperquest.mlr',
@@ -16,7 +15,7 @@ ext_modules = [
 
 setup(
     name="hyperquest", 
-    version="0.1.12", 
+    version="0.1.13", 
     author="Brent Wilder", 
     author_email="brentwilder@u.boisestate.edu",
     description=" A Python package for Hyperspectral quality estimation in hyperspectral imaging (imaging spectroscopy)",

@@ -7,7 +7,7 @@ from .utils import *
 
 def sub_pixel_shift(path_to_data, band_index_vnir, band_index_vswir, no_data_value=-9999, upsample_factor=5000):
     '''
-    A wrapper function for skimage.registration's `phase_cross_correlation`
+    A wrapper function for skimage.registration's `phase_cross_correlation` 
 
     Parameters
     ----------

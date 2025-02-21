@@ -52,7 +52,7 @@ def smile_metric(path_to_data, rotate, mask_waterbodies=True):
         raise Exception('Data needs to be a 3D array.')
     
     # ensure data is hyperspectral 
-    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+    if (np.max(w) - np.min(w)) / len(w) > 50: # assume hyperspectral data not coarser than 50 nm spec res
         raise Exception('Data needs to be a hyperspectral image.')
     
     # Perform rotation if needed
@@ -67,7 +67,7 @@ def smile_metric(path_to_data, rotate, mask_waterbodies=True):
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, w)
+        array = mask_water_using_ndwi(array, w, no_data_value=np.nan)
   
     # set up outputs
     co2_mean = np.full(array.shape[1], fill_value=np.nan)
@@ -169,7 +169,7 @@ def nodd_o2a(path_to_data, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, m
         w_sensor, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # ensure data is hyperspectral 
-    if (np.max(w_sensor) - np.min(w_sensor)) / len(w_sensor) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+    if (np.max(w_sensor) - np.min(w_sensor)) / len(w_sensor) > 50: # assume hyperspectral data not coarser than 50 nm spec res
         raise Exception('Data needs to be a hyperspectral image.')
 
     # ensure data has wavelength range in O2-A band
@@ -196,7 +196,7 @@ def nodd_o2a(path_to_data, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, m
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, w_sensor)
+        array = mask_water_using_ndwi(array, w_sensor, no_data_value=np.nan)
 
     # Average in down-track direction (reduce to 1 row)
     array = np.nanmean(array, axis=0)

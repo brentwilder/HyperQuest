@@ -12,6 +12,8 @@ def rlsd(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
     '''
     Residual-scaled local standard deviation (Gao et al., 2007).
 
+    Neighbor pixel not included in MLR, ( p_k-1 , p_k+1).
+    
     Parameters
     ----------
     path_to_data : str
@@ -48,7 +50,7 @@ def rlsd(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
         w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # ensure data is hyperspectral 
-    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+    if (np.max(w) - np.min(w)) / len(w) > 50: # assume hyperspectral data not coarser than 50 nm spec res
         raise Exception('Data needs to be a hyperspectral image.')
 
     # mask waterbodies
@@ -101,7 +103,9 @@ def rlsd(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
 
 def ssdc(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_waterbodies=True, no_data_value=-9999):
     '''
-    Spectral and spatial de-correlation (Roger & Arnold, 1996)
+    Spectral and spatial de-correlation (Roger & Arnold, 1996).
+
+    Neighbor pixel with band K is included in MLR, ( p_k-1 , p_k+1, p+1_k ).
 
     Parameters
     ----------
@@ -139,12 +143,12 @@ def ssdc(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
         w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # ensure data is hyperspectral 
-    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+    if (np.max(w) - np.min(w)) / len(w) > 50: # assume hyperspectral data not coarser than 50 nm spec res
         raise Exception('Data needs to be a hyperspectral image.')
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, w)
+        array = mask_water_using_ndwi(array, w, no_data_value=no_data_value)
 
     # Mask no data values
     array[array <= no_data_value] = np.nan
@@ -190,10 +194,13 @@ def ssdc(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
     return snr, noise_variance
 
 
-def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, include_neighbor_pixel_in_mlr=True,
+def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, 
            snr_in_db=False, mask_waterbodies=True, no_data_value=-9999):
     '''
-    Homogeneous regions division and spectral de-correlation (Gao et al., 2008)
+    Homogeneous regions division and spectral de-correlation (Gao et al., 2008). 
+    
+    Neighbor pixel with band K is included in MLR, ( p_k-1 , p_k+1, p+1_k ).
+
         
     Parameters
     ----------
@@ -233,12 +240,12 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
         w, fwhm, obs_time = read_hdr_metadata(path_to_data)
 
     # ensure data is hyperspectral 
-    if (np.max(w) - np.min(w)) / len(w) < 50: # assume hyperspectral data not coarser than 50 nm spec res
+    if (np.max(w) - np.min(w)) / len(w) > 50: # assume hyperspectral data not coarser than 50 nm spec res
         raise Exception('Data needs to be a hyperspectral image.')
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, w)
+        array = mask_water_using_ndwi(array, w, no_data_value=no_data_value)
 
     # Mask no data values (to negative 9999 for PCA and SLIC to work)
     array[array <= no_data_value] = -9999
@@ -261,7 +268,7 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
     def process_segment(u):
         test_mask = (segments == u)
         test_segment = array[test_mask]
-        test_segment = test_segment[test_segment[:, 0] > -99]
+        test_segment = test_segment[test_segment[:, 0] > -99] #spatial nan
         if test_segment.shape[0] != 0:
             return test_segment
         else:
@@ -269,16 +276,11 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
     segment_data = Parallel(n_jobs=ncpus)(delayed(process_segment)(u) for u in unique_segments)
     segment_data = [seg for seg in segment_data if seg is not None]
 
-    # Parallel processing of all segments depending on method selected
-    if include_neighbor_pixel_in_mlr == False:
-        # Perform just spectral MLR
-        results = Parallel(n_jobs=ncpus, 
-                           timeout=None)(delayed(mlr_spectral)(segment) for segment in segment_data)
-        
-    else: # perform spectral-spatial MLR using k` nearby neighbor.
-        results = Parallel(n_jobs=ncpus, 
-                           timeout=None)(delayed(mlr_spectral_spatial)(segment) for segment in segment_data) 
-
+    # Parallel processing of all segments 
+    # perform spectral-spatial MLR using k` nearby neighbor.
+    results = Parallel(n_jobs=ncpus, 
+                        timeout=None)(delayed(mlr_spectral_spatial)(segment) for segment in segment_data) 
+    
     # Aggregate results
     local_mu = np.array([res[0] for res in results])
     local_sigma = np.array([res[1] for res in results])
