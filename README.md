@@ -15,7 +15,7 @@ __Important: this package assumes the following about input hyperspectral data:_
 - Pushbroom imaging spectrometer, such as, but not limited to:
     - AVIRIS-NG, AVIRIS-3, DESIS, EnMAP, EMIT, GaoFen-5, HISUI, Hyperion EO-1, HySIS, PRISMA, Tanager-1
 
-NOTE: this is under active development. Specifically intrinsic dimensionality methods are still being ironed out.
+NOTE: this is under active development.
 
 ## Installation Instructions
 The latest release can be installed via pip:
