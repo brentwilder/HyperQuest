@@ -144,7 +144,7 @@ def ssdc(path_to_data, block_size, nbins=150, ncpus=1, snr_in_db = False, mask_w
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, w)
+        array = mask_water_using_ndwi(array, w, no_data_value=no_data_value)
 
     # Mask no data values
     array[array <= no_data_value] = np.nan
@@ -238,7 +238,7 @@ def hrdsdc(path_to_data, n_segments=200, compactness=0.1, n_pca=3, ncpus=1, incl
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, w)
+        array = mask_water_using_ndwi(array, w, no_data_value=no_data_value)
 
     # Mask no data values (to negative 9999 for PCA and SLIC to work)
     array[array <= no_data_value] = -9999

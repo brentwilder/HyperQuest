@@ -32,7 +32,7 @@ def mlr_spectral(np.ndarray[np.float64_t, ndim=2] block):
     for k in range(1, cols - 1):
 
         # ensure not using bad band if reflectance product
-        if np.isnan(block[0, k]) or np.isnan(block[0, k+1]) or np.isnan(block[0, k-1]):
+        if block[0,k] <= -0.01 or block[0,k-1] <= -0.01 or block[0,k+1] <= -0.01:
             continue
 
         # create the X and y for MLR
@@ -76,7 +76,7 @@ def mlr_spectral_spatial(np.ndarray[np.float64_t, ndim=2] block):
     for k in range(1, cols - 1):
 
         # ensure not using bad band if reflectance product
-        if np.isnan(block[0, k]) or np.isnan(block[0, k+1]) or np.isnan(block[0, k-1]):
+        if block[0,k] <= -0.01 or block[0,k-1] <= -0.01 or block[0,k+1] <= -0.01:
             continue
 
         # create the X and y for MLR

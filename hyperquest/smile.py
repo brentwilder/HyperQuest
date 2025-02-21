@@ -67,7 +67,7 @@ def smile_metric(path_to_data, rotate, mask_waterbodies=True):
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, w)
+        array = mask_water_using_ndwi(array, w, no_data_value=np.nan)
   
     # set up outputs
     co2_mean = np.full(array.shape[1], fill_value=np.nan)
@@ -196,7 +196,7 @@ def nodd_o2a(path_to_data, rotate, path_to_rtm_output_csv, ncpus=1,rho_s=0.15, m
 
     # mask waterbodies
     if mask_waterbodies is True:
-        array = mask_water_using_ndwi(array, w_sensor)
+        array = mask_water_using_ndwi(array, w_sensor, no_data_value=np.nan)
 
     # Average in down-track direction (reduce to 1 row)
     array = np.nanmean(array, axis=0)

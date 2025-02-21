@@ -53,7 +53,7 @@ def random_matrix_theory(path_to_data, noise_variance, mask_waterbodies=True, al
 
     # mask waterbodies
     if mask_waterbodies is True:
-        img = mask_water_using_ndwi(img, w)
+        img = mask_water_using_ndwi(img, w, no_data_value=no_data_value)
 
     # Mask no data values
     img[img <= no_data_value] = np.nan

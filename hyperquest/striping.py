@@ -6,7 +6,7 @@ from .utils import *
 
 def sigma_threshold(path_to_data, rotate, sigma_multiplier = 3):
     '''
-    Uses a sigma threshold counting neighboring pixels to determine if striping is present, as presented in,
+    Uses a sigma threshold counting neighboring pixels to determine if striping is present, as presented in, 
 
     Yokoya 2010, Preprocessing of hyperspectral imagery with consideration of smile and keystone properties,
 

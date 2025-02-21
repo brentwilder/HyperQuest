@@ -212,7 +212,7 @@ def linear_to_db(snr_linear):
     return 10 * np.log10(snr_linear)
     
 
-def mask_water_using_ndwi(array, wavelengths, ndwi_threshold=0.25):
+def mask_water_using_ndwi(array, wavelengths, no_data_value = -9999, ndwi_threshold=0.25):
     '''
     Returns array where NDWI greater than a threshold are set to NaN.
 
@@ -232,7 +232,7 @@ def mask_water_using_ndwi(array, wavelengths, ndwi_threshold=0.25):
     nir = array[:, :, nir_index] 
     ndwi = (green - nir) / (green + nir)
 
-    array[(ndwi > ndwi_threshold)] = np.nan
+    array[(ndwi > ndwi_threshold)] = no_data_value
 
     return array
 
