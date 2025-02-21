@@ -6,9 +6,9 @@
 [![Downloads](https://pepy.tech/badge/hyperquest)](https://pepy.tech/project/hyperquest)
 
 
-`hyperquest`: A Python package for estimating image-wide quality estimation metrics of hyperspectral imaging (imaging spectroscopy). Computations are sped up and scale with number of cpus.
+`hyperquest`: A Python package for estimating image-wide quality estimation metrics of hyperspectral imaging (imaging spectroscopy). Computations are sped up and scale with number of cpus. Available methods and summaries can be found in [documentation](https://hyperquest.readthedocs.io).
 
-__Important: this package assumes the following about input hyperspectral data:__ 
+### Important: this package assumes the following about input hyperspectral data:
 - Data must be in NetCDF (.nc) or ENVI (.hdr)
 - Currently data is expected in Radiance.
   - For smile & striping methods, data must not be georeferenced (typically referred to as L1B before ortho)
@@ -30,8 +30,6 @@ If using Windows PC, [you must have "Build Tools"](https://wiki.python.org/moin/
   - making sure to check the box next to "Desktop development with C++"
   - and then, pip install hyperquest
 
-
-Available methods and summaries can be found in [documentation](https://hyperquest.readthedocs.io).
 
 ## Usage example
 - see [EMIT example](tutorials/example_using_EMIT.ipynb) which has different methods computed over Libya-4.
