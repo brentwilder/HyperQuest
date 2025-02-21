@@ -53,6 +53,7 @@ def mlr_spectral(np.ndarray[np.float64_t, ndim=2] block):
 def mlr_spectral_spatial(np.ndarray[np.float64_t, ndim=2] block):
     '''
     TODO
+
     '''
 
     # remove data that is NaN
@@ -89,7 +90,7 @@ def mlr_spectral_spatial(np.ndarray[np.float64_t, ndim=2] block):
             coef = np.linalg.lstsq(X, y, rcond=None)[0]
             y_pred = X @ coef
 
-            # 3 DOF because of MLR
+            # 4 DOF because of MLR
             sigma_block[k] = np.std(y - y_pred, ddof=4)
             mu_block[k] = np.mean(y)
 

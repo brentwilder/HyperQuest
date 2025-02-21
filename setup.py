@@ -5,7 +5,6 @@ import numpy
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-
 ext_modules = [
     Extension(
         'hyperquest.mlr',
