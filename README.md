@@ -37,6 +37,3 @@ If using Windows PC, [you must have "Build Tools"](https://wiki.python.org/moin/
 ## libRadtran install instructions
 - Can be installed on Unix type system using the following link:
     - http://www.libradtran.org/doku.php?id=download
-
-## Citation
-Brent Wilder. (2025). brentwilder/HyperQuest: v0.XXX (vXXX). Zenodo. https://doi.org/10.5281/zenodo.14890171
